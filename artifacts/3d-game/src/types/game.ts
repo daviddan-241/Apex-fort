@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-export type GamePhase = "menu" | "character-select" | "playing" | "victory" | "defeat";
+export type GamePhase = "menu" | "character-select" | "dropping" | "playing" | "victory" | "defeat";
 export type WeaponType = "AR" | "Shotgun" | "Sniper" | "SMG" | "Pistol" | "Pickaxe" | "RPG" | "Grenade";
 export type BuildPieceType = "wall" | "floor" | "ramp" | "roof" | "stair";
 export type MaterialType = "wood" | "stone" | "metal";
