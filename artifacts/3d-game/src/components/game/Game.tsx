@@ -13,6 +13,7 @@ import BuildingSystem from "./BuildingSystem";
 import LootItems from "./LootItems";
 import HUD from "../ui/HUD";
 import MobileControls from "../ui/MobileControls";
+import GameUpdater from "./GameUpdater";
 
 export default function Game() {
   const bulletsRef = useRef<ReturnType<typeof createBullet>[]>([]);
@@ -90,6 +91,7 @@ export default function Game() {
 
       <HUD />
       <MobileControls />
+      <GameUpdater />
     </div>
   );
 }
