@@ -33,6 +33,9 @@ interface GameStore extends GameState {
   removeDamageNumber: (id: string) => void;
   setLocationName: (name: string) => void;
   addXP: (amount: number) => void;
+  enterVehicle: (vehicleId: string) => void;
+  exitVehicle: () => void;
+  setVehicleSpeed: (speed: number) => void;
   reset: () => void;
 }
 
@@ -69,6 +72,10 @@ const defaultState: GameState = {
   locationName: "Tilted Towers",
   xp: 0,
   level: 1,
+  inVehicle: false,
+  vehicleId: null,
+  vehicleSpeed: 0,
+  gameVersion: "v1.0.0",
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -133,7 +140,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (nh <= 0) updates.phase = "defeat";
       } else updates.stormDamageTimer = newTimer;
     }
-    // Clear old kill feed entries
     const now = Date.now();
     const freshKillFeed = s.killFeed.filter(k => now - k.timestamp < 5000);
     if (freshKillFeed.length !== s.killFeed.length) updates.killFeed = freshKillFeed;
@@ -149,19 +155,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pickupWeapon: (weapon) => {
     set((s) => {
       const newWeapons = [...s.weapons] as (Weapon | null)[];
-      // Find existing slot of same type
       const existingIdx = newWeapons.findIndex(w => w?.type === weapon.type);
       if (existingIdx >= 0 && newWeapons[existingIdx]) {
         (newWeapons[existingIdx] as Weapon).ammo = Math.min((newWeapons[existingIdx] as Weapon).maxAmmo, (newWeapons[existingIdx] as Weapon).ammo + weapon.ammo);
         return { weapons: newWeapons };
       }
-      // Find empty slot (skip slot 0 which is pickaxe)
       const emptySlot = newWeapons.findIndex((w, i) => i > 0 && w === null);
       if (emptySlot >= 0) {
         newWeapons[emptySlot] = weapon;
         return { weapons: newWeapons };
       }
-      // Replace active slot (not pickaxe)
       const active = s.activeSlot > 0 ? s.activeSlot : 1;
       newWeapons[active] = weapon;
       return { weapons: newWeapons, currentWeapon: weapon };
@@ -187,7 +190,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (s.isReloading || !s.currentWeapon || s.currentWeapon.type === "Pickaxe") return;
     if (s.currentWeapon.ammo === s.currentWeapon.maxAmmo) return;
     set({ isReloading: true });
-    setTimeout(() => get().finishReload(), s.currentWeapon.reloadTime);
+    setTimeout(() => get().finishReload(), s.currentWeapon!.reloadTime);
   },
 
   finishReload: () => {
@@ -251,6 +254,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newLevel = Math.floor(newXP / 1000) + 1;
     return { xp: newXP, level: newLevel };
   }),
+
+  enterVehicle: (vehicleId) => set({ inVehicle: true, vehicleId }),
+  exitVehicle: () => set({ inVehicle: false, vehicleId: null, vehicleSpeed: 0 }),
+  setVehicleSpeed: (speed) => set({ vehicleSpeed: speed }),
 
   reset: () => set({
     ...defaultState,
