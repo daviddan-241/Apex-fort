@@ -1,0 +1,232 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Burbank+Big+Condensed:wght@700&family=Share+Tech+Mono&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --background: 228 20% 6%;
+  --foreground: 210 20% 92%;
+  --border: 228 15% 16%;
+  --card: 228 18% 9%;
+  --card-foreground: 210 20% 92%;
+  --primary: 30 100% 54%;
+  --primary-foreground: 0 0% 8%;
+  --secondary: 228 15% 15%;
+  --secondary-foreground: 210 20% 80%;
+  --muted: 228 12% 13%;
+  --muted-foreground: 210 12% 50%;
+  --accent: 200 80% 48%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 78% 54%;
+  --input: 228 14% 18%;
+  --ring: 30 100% 54%;
+  --app-font-sans: 'Inter', sans-serif;
+  --app-font-mono: 'Share Tech Mono', monospace;
+  --radius: 0.2rem;
+
+  /* Fortnite palette */
+  --fn-orange: #ff8c00;
+  --fn-yellow: #ffcc00;
+  --fn-blue: #00d4ff;
+  --fn-purple: #8b5cf6;
+  --fn-bg: #0a0810;
+  --fn-card: rgba(0,0,0,0.65);
+  --fn-border: rgba(255,255,255,0.08);
+}
+
+@layer base {
+  * { @apply border-border; box-sizing: border-box; }
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+}
+
+/* ── Typography ── */
+.font-display { font-family: 'Rajdhani', sans-serif; }
+.font-mono-game { font-family: 'Share Tech Mono', monospace; }
+
+/* ── Game container ── */
+canvas { display: block; }
+
+.game-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Fortnite tilted background ── */
+.fn-diagonal-bg {
+  background: repeating-linear-gradient(
+    -58deg,
+    transparent,
+    transparent 70px,
+    rgba(255,140,0,0.022) 70px,
+    rgba(255,140,0,0.022) 71px
+  );
+}
+
+/* ── Glow helpers ── */
+.glow-orange { filter: drop-shadow(0 0 20px rgba(255,140,0,0.7)); }
+.glow-gold   { filter: drop-shadow(0 0 24px rgba(255,200,0,0.8)); }
+.glow-red    { filter: drop-shadow(0 0 20px rgba(239,68,68,0.7)); }
+
+/* ── HUD panels ── */
+.hud-panel {
+  background: var(--fn-card);
+  border: 1px solid var(--fn-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Crosshair ── */
+.crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 200;
+}
+
+/* ── Vignettes ── */
+@keyframes damage-flash {
+  0%   { opacity: 0; }
+  25%  { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+.damage-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(220,20,20,0.45) 100%);
+  box-shadow: inset 0 0 80px rgba(220,38,38,0.55);
+  animation: damage-flash 0.35s ease-out forwards;
+  z-index: 150;
+}
+
+@keyframes storm-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 0.8; }
+}
+.storm-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 120px rgba(80,40,220,0.5);
+  animation: storm-pulse 1.8s ease-in-out infinite;
+  z-index: 150;
+}
+
+/* ── Kill feed entry ── */
+@keyframes slide-right {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.kill-feed-entry { animation: slide-right 0.25s cubic-bezier(0.16,1,0.3,1); }
+
+/* ── Minimap ── */
+.minimap-container {
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255,140,0,0.35);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.5),
+    0 4px 20px rgba(0,0,0,0.6),
+    inset 0 0 12px rgba(0,0,0,0.4);
+}
+
+/* ── Vital bars ── */
+.hp-bar     { background: linear-gradient(90deg, #dc2626, #ef4444); }
+.shield-bar { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+.armor-bar  { background: linear-gradient(90deg, #4b5563, #6b7280); }
+
+/* ── Fortnite "bounce" button hover ── */
+@keyframes fn-bounce {
+  0%   { transform: perspective(600px) rotateX(0deg) scale(1); }
+  40%  { transform: perspective(600px) rotateX(-3deg) scale(1.04); }
+  100% { transform: perspective(600px) rotateX(0deg) scale(1); }
+}
+.fn-btn:active { animation: fn-bounce 0.2s ease-out; }
+
+/* ── Victory confetti ── */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-10%) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110%) rotate(720deg); opacity: 0.3; }
+}
+
+/* ── Victory text glow ── */
+@keyframes victory-shimmer {
+  0%, 100% { filter: drop-shadow(0 0 30px rgba(255,200,0,0.7)) drop-shadow(0 4px 20px rgba(255,100,0,0.5)); }
+  50%       { filter: drop-shadow(0 0 60px rgba(255,220,0,0.9)) drop-shadow(0 8px 40px rgba(255,140,0,0.7)); }
+}
+.victory-shimmer { animation: victory-shimmer 2.2s ease-in-out infinite; }
+
+/* ── Pickup bounce ── */
+@keyframes item-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* ── Mobile safe areas ── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
+}
+
+/* ── Mobile touch button ── */
+.touch-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* ── Rarity colors ── */
+.rarity-mythic    { color: #e879f9; }
+.rarity-legendary { color: #fbbf24; }
+.rarity-epic      { color: #a78bfa; }
+.rarity-rare      { color: #60a5fa; }
+.rarity-common    { color: #9ca3af; }
+
+/* ── Number pump on kill ── */
+@keyframes number-pump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.pump { animation: number-pump 0.25s ease-out; }

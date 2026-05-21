@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "APEX FORT GDD"
+version = "1.0.0"
+id = "artifacts/apex-fort"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25348
+
+[services.development]
+run = "pnpm --filter @workspace/apex-fort run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/apex-fort", "run", "build" ]
+publicDir = "artifacts/apex-fort/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25348"
+BASE_PATH = "/"

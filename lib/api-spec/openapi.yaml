@@ -1,15 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: APEX FORT Game Design Document API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: characters
+    description: Character roster operations
+  - name: systems
+    description: Game systems documentation
+  - name: weapons
+    description: Weapons and loadouts
+  - name: gamemodes
+    description: Game modes
+  - name: progression
+    description: Progression and unlocks
 paths:
   /healthz:
     get:
@@ -24,6 +33,127 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /characters:
+    get:
+      operationId: listCharacters
+      tags: [characters]
+      summary: List all characters
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Character"
+  /characters/{id}:
+    get:
+      operationId: getCharacter
+      tags: [characters]
+      summary: Get character details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+        "404":
+          description: Not found
+  /systems:
+    get:
+      operationId: listSystems
+      tags: [systems]
+      summary: List all game systems
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameSystem"
+  /systems/{id}:
+    get:
+      operationId: getSystem
+      tags: [systems]
+      summary: Get a specific game system
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSystem"
+        "404":
+          description: Not found
+  /weapons:
+    get:
+      operationId: listWeapons
+      tags: [weapons]
+      summary: List all weapons
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Weapon"
+  /gamemodes:
+    get:
+      operationId: listGameModes
+      tags: [gamemodes]
+      summary: List all game modes
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameMode"
+  /progression:
+    get:
+      operationId: getProgression
+      tags: [progression]
+      summary: Get progression system overview
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressionSystem"
+  /stats/overview:
+    get:
+      operationId: getStatsOverview
+      tags: [progression]
+      summary: Get GDD stats overview (counts, sections)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsOverview"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +164,221 @@ components:
       required:
         - status
 
+    Ability:
+      type: object
+      required: [name, type, description, cooldown]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [passive, tactical, ultimate]
+        description:
+          type: string
+        cooldown:
+          type: ["string", "null"]
+        damage:
+          type: ["string", "null"]
+        range:
+          type: ["string", "null"]
+
+    Character:
+      type: object
+      required: [id, name, role, archetype, description, abilities, rarity, playstyle, passiveBonus, stats, backstory]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [Assault, Support, Recon, Tank, Stealth, Specialist]
+        archetype:
+          type: string
+        description:
+          type: string
+        backstory:
+          type: string
+        playstyle:
+          type: string
+        rarity:
+          type: string
+          enum: [Legendary, Epic, Rare, Common]
+        abilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ability"
+        passiveBonus:
+          type: string
+        stats:
+          $ref: "#/components/schemas/CharacterStats"
+
+    CharacterStats:
+      type: object
+      required: [health, armor, speed, ability_power, weapon_accuracy]
+      properties:
+        health:
+          type: integer
+        armor:
+          type: integer
+        speed:
+          type: integer
+        ability_power:
+          type: integer
+        weapon_accuracy:
+          type: integer
+
+    GameSystem:
+      type: object
+      required: [id, name, category, overview, components, technicalNotes]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [Combat, Building, AI, Physics, UI, Progression, World, Vehicles]
+        overview:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemComponent"
+        technicalNotes:
+          type: array
+          items:
+            type: string
+        codeSnippet:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
+
+    SystemComponent:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    Weapon:
+      type: object
+      required: [id, name, type, rarity, damage, fireRate, reloadTime, magazineSize, description, attachments]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [Assault Rifle, SMG, Shotgun, Sniper Rifle, Pistol, Melee, Explosive, LMG]
+        rarity:
+          type: string
+          enum: [Mythic, Legendary, Epic, Rare, Common]
+        damage:
+          type: integer
+        fireRate:
+          type: number
+        reloadTime:
+          type: number
+        magazineSize:
+          type: integer
+        description:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+
+    GameMode:
+      type: object
+      required: [id, name, description, playerCount, features, mapSize]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        playerCount:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        mapSize:
+          type: string
+        isMultiplayer:
+          type: boolean
+        hasBuilding:
+          type: boolean
+
+    ProgressionSystem:
+      type: object
+      required: [levels, battlePassTiers, cosmetics, currencies]
+      properties:
+        levels:
+          type: integer
+        battlePassTiers:
+          type: integer
+        cosmetics:
+          $ref: "#/components/schemas/CosmeticsOverview"
+        currencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Currency"
+        unlockMethods:
+          type: array
+          items:
+            type: string
+
+    CosmeticsOverview:
+      type: object
+      required: [skins, emotes, pickaxes, backblings, loadingScreens]
+      properties:
+        skins:
+          type: integer
+        emotes:
+          type: integer
+        pickaxes:
+          type: integer
+        backblings:
+          type: integer
+        loadingScreens:
+          type: integer
+
+    Currency:
+      type: object
+      required: [name, description, earnedBy]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        earnedBy:
+          type: array
+          items:
+            type: string
+
+    StatsOverview:
+      type: object
+      required: [totalCharacters, totalWeapons, totalGameModes, totalSystems, totalBiomes, totalPOIs]
+      properties:
+        totalCharacters:
+          type: integer
+        totalWeapons:
+          type: integer
+        totalGameModes:
+          type: integer
+        totalSystems:
+          type: integer
+        totalBiomes:
+          type: integer
+        totalPOIs:
+          type: integer
