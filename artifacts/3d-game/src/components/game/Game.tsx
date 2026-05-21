@@ -12,6 +12,7 @@ import Bullets, { createBullet } from "./Bullets";
 import BuildingSystem from "./BuildingSystem";
 import LootItems from "./LootItems";
 import HUD from "../ui/HUD";
+import MobileControls from "../ui/MobileControls";
 
 export default function Game() {
   const bulletsRef = useRef<ReturnType<typeof createBullet>[]>([]);
@@ -42,39 +43,23 @@ export default function Game() {
           gl.toneMappingExposure = 1.1;
         }}
       >
-        {/* Frame ticker */}
         <FrameTicker tick={tick} playerPosRef={playerPosRef} />
 
         {/* Lighting */}
         <ambientLight intensity={0.55} color="#b0c8e8" />
         <directionalLight
-          position={[60, 90, 40]}
-          intensity={1.6}
-          color="#fff8e0"
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-180}
-          shadow-camera-right={180}
-          shadow-camera-top={180}
-          shadow-camera-bottom={-180}
-          shadow-camera-near={1}
-          shadow-camera-far={400}
+          position={[60, 90, 40]} intensity={1.6} color="#fff8e0"
+          castShadow shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-180} shadow-camera-right={180}
+          shadow-camera-top={180} shadow-camera-bottom={-180}
+          shadow-camera-near={1} shadow-camera-far={400}
         />
         <directionalLight position={[-30, 50, -60]} intensity={0.4} color="#a0c0ff" />
         <hemisphereLight args={["#87ceeb", "#4a8a28", 0.5]} />
         <fogExp2 attach="fog" args={["#c8dff0", 0.0025]} />
 
         {/* Sky */}
-        <Sky
-          distance={1800}
-          sunPosition={[80, 40, -60]}
-          inclination={0.52}
-          azimuth={0.28}
-          turbidity={5}
-          rayleigh={1.2}
-          mieCoefficient={0.005}
-          mieDirectionalG={0.8}
-        />
+        <Sky distance={1800} sunPosition={[80, 40, -60]} inclination={0.52} azimuth={0.28} turbidity={5} rayleigh={1.2} mieCoefficient={0.005} mieDirectionalG={0.8} />
         <Stars radius={400} depth={80} count={2000} factor={4} fade />
 
         <Suspense fallback={null}>
@@ -84,22 +69,16 @@ export default function Game() {
           <Bots onShoot={handleShoot} playerRef={playerPosRef} bulletsRef={bulletsRef} />
           <BuildingSystem newPiece={newBuildPieceRef} />
           <Bullets bulletsRef={bulletsRef} />
-          <Player
-            onShoot={handleShoot}
-            onHarvest={handleHarvest}
-          />
+          <Player onShoot={handleShoot} onHarvest={handleHarvest} />
           <PlayerPosTracker playerPosRef={playerPosRef} />
           {buildMode && (
-            <BuildPlacer
-              newBuildPieceRef={newBuildPieceRef}
-              selectedBuildPiece={selectedBuildPiece}
-              activeMaterial={activeMaterial}
-            />
+            <BuildPlacer newBuildPieceRef={newBuildPieceRef} selectedBuildPiece={selectedBuildPiece} activeMaterial={activeMaterial} />
           )}
         </Suspense>
       </Canvas>
 
       <HUD />
+      <MobileControls />
     </div>
   );
 }
@@ -123,11 +102,7 @@ function PlayerPosTracker({ playerPosRef }: { playerPosRef: React.MutableRefObje
   return null;
 }
 
-function BuildPlacer({
-  newBuildPieceRef,
-  selectedBuildPiece,
-  activeMaterial,
-}: {
+function BuildPlacer({ newBuildPieceRef, selectedBuildPiece, activeMaterial }: {
   newBuildPieceRef: React.MutableRefObject<{ position: THREE.Vector3; type: BuildPieceType; material: MaterialType } | null>;
   selectedBuildPiece: BuildPieceType;
   activeMaterial: MaterialType;
