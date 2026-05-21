@@ -2,200 +2,179 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { useGameStore } from './store';
+import { useGameStore, SKINS } from './store';
+import { sounds } from './Sounds';
 
-const PLAYER_SPEED = 15;
+const PLAYER_SPEED = 14;
 const JUMP_FORCE = 10;
-const GRAVITY = 25;
+const GRAVITY = 26;
 
 export function Player() {
   const playerRef = useRef<THREE.Group>(null);
   const [, get] = useKeyboardControls();
   const { camera } = useThree();
-  const updatePlayerPos = useGameStore(state => state.updatePlayerPos);
-  const fireWeapon = useGameStore(state => state.fireWeapon);
-  const reloadWeapon = useGameStore(state => state.reloadWeapon);
-  const currentWeapon = useGameStore(state => state.currentWeapon);
-  const isBuildMode = useGameStore(state => state.isBuildMode);
-  const placeStructure = useGameStore(state => state.placeStructure);
-  const damagePlayer = useGameStore(state => state.damagePlayer);
 
-  const [velocity, setVelocity] = useState(new THREE.Vector3(0, 0, 0));
+  const updatePlayerPos = useGameStore(s => s.updatePlayerPos);
+  const fireWeapon = useGameStore(s => s.fireWeapon);
+  const reloadWeapon = useGameStore(s => s.reloadWeapon);
+  const currentWeapon = useGameStore(s => s.currentWeapon);
+  const isBuildMode = useGameStore(s => s.isBuildMode);
+  const placeStructure = useGameStore(s => s.placeStructure);
+  const damagePlayer = useGameStore(s => s.damagePlayer);
+  const inVehicle = useGameStore(s => s.inVehicle);
+  const selectedSkin = useGameStore(s => s.selectedSkin);
+
+  const velocityY = useRef(0);
+  const isGrounded = useRef(true);
   const lastFired = useRef(0);
+  const isMouseDown = useRef(false);
 
-  const [isGrounded, setIsGrounded] = useState(true);
+  const skin = SKINS.find(s => s.id === selectedSkin) ?? SKINS[0];
 
-  // Input handling
   useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      if (document.pointerLockElement) {
-        if (e.button === 0) { // Left click
-          if (isBuildMode && playerRef.current) {
-            const p = playerRef.current.position;
-            const dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-            dir.y = 0;
-            dir.normalize();
-            
-            const buildPos = p.clone().add(dir.multiplyScalar(3));
-            buildPos.y = 1.5;
-            
-            placeStructure({
-              id: `struct-${Date.now()}`,
-              position: buildPos,
-              rotation: new THREE.Euler(0, Math.atan2(dir.x, dir.z), 0),
-              size: new THREE.Vector3(4, 3, 0.5),
-              hp: 100
-            });
-          } else {
-            // Shoot handled in useFrame for auto weapons if needed, 
-            // but for semi-auto/first shot, handle here
-            const now = performance.now() / 1000;
-            if (now - lastFired.current >= currentWeapon.fireRate) {
-              const dir = new THREE.Vector3();
-              camera.getWorldDirection(dir);
-              if (playerRef.current) {
-                const origin = playerRef.current.position.clone().add(new THREE.Vector3(0, 0.5, 0));
-                fireWeapon(dir, origin);
-                lastFired.current = now;
-              }
-            }
-          }
-        }
+    const onDown = (e: MouseEvent) => {
+      isMouseDown.current = true;
+      if (!document.pointerLockElement) return;
+      if (e.button === 0 && isBuildMode && playerRef.current) {
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        dir.y = 0;
+        dir.normalize();
+        const p = playerRef.current.position;
+        const buildPos = p.clone().addScaledVector(dir, 3);
+        buildPos.y = 1.5;
+        placeStructure({
+          id: `struct-${Date.now()}`,
+          position: buildPos,
+          rotation: new THREE.Euler(0, Math.atan2(dir.x, dir.z), 0),
+          size: new THREE.Vector3(4, 3, 0.5),
+          hp: 100,
+        });
       }
     };
-    
-    window.addEventListener('mousedown', handleMouseDown);
-    return () => window.removeEventListener('mousedown', handleMouseDown);
-  }, [camera, isBuildMode, currentWeapon, fireWeapon, placeStructure]);
+    const onUp = () => { isMouseDown.current = false; };
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('mouseup', onUp); };
+  }, [camera, isBuildMode, placeStructure]);
 
-  useFrame((state, delta) => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'KeyB') useGameStore.getState().toggleBuildMode();
+      if (e.code === 'KeyR') reloadWeapon();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [reloadWeapon]);
+
+  useFrame((_, delta) => {
     if (!playerRef.current) return;
-    
-    const { forward, backward, left, right, jump, reload, build } = get();
-    
-    // Reload
-    if (reload) {
-      reloadWeapon();
+    const store = useGameStore.getState();
+    if (store.gameState !== 'playing') return;
+    if (store.inVehicle) {
+      // Hide player while in vehicle
+      playerRef.current.visible = false;
+      return;
     }
+    playerRef.current.visible = true;
 
-    // Toggle build (handle debouncing to avoid flicker)
-    // using keyboard events is better for toggles to avoid continuous firing
-    
+    const { forward, backward, left, right, jump } = get();
     const p = playerRef.current.position;
-    
-    // Movement relative to camera
-    const cameraDirection = new THREE.Vector3();
-    camera.getWorldDirection(cameraDirection);
-    cameraDirection.y = 0;
-    cameraDirection.normalize();
-    
-    const cameraRight = new THREE.Vector3().crossVectors(cameraDirection, new THREE.Vector3(0, 1, 0)).normalize();
-    
-    const moveDir = new THREE.Vector3(0, 0, 0);
-    if (forward) moveDir.add(cameraDirection);
-    if (backward) moveDir.sub(cameraDirection);
-    if (right) moveDir.add(cameraRight);
-    if (left) moveDir.sub(cameraRight);
-    
-    if (moveDir.lengthSq() > 0) {
-      moveDir.normalize();
-    }
-    
-    // Apply movement
-    p.x += moveDir.x * PLAYER_SPEED * delta;
-    p.z += moveDir.z * PLAYER_SPEED * delta;
-    
-    // Jumping & Gravity
-    if (jump && isGrounded) {
-      velocity.y = JUMP_FORCE;
-      setIsGrounded(false);
-    }
-    
-    velocity.y -= GRAVITY * delta;
-    p.y += velocity.y * delta;
-    
-    if (p.y < 1) { // Ground collision
-      p.y = 1;
-      velocity.y = 0;
-      setIsGrounded(true);
-    }
-    
-    // Bound to map
-    p.x = Math.max(-100, Math.min(100, p.x));
-    p.z = Math.max(-100, Math.min(100, p.z));
 
-    // Continuous firing for auto weapons
-    if (currentWeapon.name === 'AR' || currentWeapon.name === 'SMG') {
-      // Need a way to check if mouse is held down. The browser doesn't natively provide "isMouseDown" synchronously.
-      // We will skip full auto here for simplicity unless we track mouse state.
+    const camDir = new THREE.Vector3();
+    camera.getWorldDirection(camDir);
+    camDir.y = 0;
+    camDir.normalize();
+    const camRight = new THREE.Vector3().crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
+
+    const move = new THREE.Vector3();
+    if (forward) move.add(camDir);
+    if (backward) move.sub(camDir);
+    if (right) move.add(camRight);
+    if (left) move.sub(camRight);
+    if (move.lengthSq() > 0) move.normalize();
+
+    p.x += move.x * PLAYER_SPEED * delta;
+    p.z += move.z * PLAYER_SPEED * delta;
+
+    if (jump && isGrounded.current) {
+      velocityY.current = JUMP_FORCE;
+      isGrounded.current = false;
     }
-    
-    updatePlayerPos(p);
-    
-    // Camera follow (Third Person)
-    const idealOffset = new THREE.Vector3(0, 2, 5); // Behind and above
-    idealOffset.applyQuaternion(camera.quaternion); // Not quite right, we want it relative to player yaw.
-    
-    // Simple 3rd person camera:
-    // Actually, PointerLockControls handles camera rotation. We just move the camera relative to its own look direction.
-    // In PointerLock, the camera IS the pivot. We place the player mesh IN FRONT of the camera.
-    // Wait, PointerLockControls moves the camera. If we want third person, we need custom logic or we put player model offset from camera.
-    
-    // We will place player model slightly in front of camera
+    velocityY.current -= GRAVITY * delta;
+    p.y += velocityY.current * delta;
+    if (p.y <= 1) {
+      p.y = 1;
+      velocityY.current = 0;
+      isGrounded.current = true;
+    }
+
+    p.x = Math.max(-98, Math.min(98, p.x));
+    p.z = Math.max(-98, Math.min(98, p.z));
+
     const lookDir = new THREE.Vector3();
     camera.getWorldDirection(lookDir);
     lookDir.y = 0;
-    lookDir.normalize();
-    
-    // Align player model to look direction
-    if (lookDir.lengthSq() > 0) {
+    if (lookDir.lengthSq() > 0.01) {
       playerRef.current.rotation.y = Math.atan2(lookDir.x, lookDir.z);
     }
-    
-    // Move camera to follow player smoothly
-    const cameraPos = p.clone().sub(lookDir.multiplyScalar(4)).add(new THREE.Vector3(0, 2, 0));
-    camera.position.lerp(cameraPos, 0.2);
-    
-    // Storm Damage
-    const store = useGameStore.getState();
+
+    // Camera follow
+    const back = lookDir.clone().negate().multiplyScalar(4.5);
+    const camTarget = p.clone().add(back).add(new THREE.Vector3(0, 2.2, 0));
+    camera.position.lerp(camTarget, 0.18);
+
+    updatePlayerPos(p.clone());
+
+    // Storm damage
     const distToCenter = Math.sqrt(p.x * p.x + p.z * p.z);
-    if (distToCenter > store.stormRadius) {
-      // 1 hp per second
-      if (Math.random() < delta) { // crude timer
-        damagePlayer(1);
+    if (distToCenter > store.stormRadius && Math.random() < delta) {
+      damagePlayer(1);
+    }
+
+    // Auto-fire for AR and SMG
+    if (isMouseDown.current && document.pointerLockElement && !isBuildMode) {
+      const now = performance.now() / 1000;
+      if (now - lastFired.current >= currentWeapon.fireRate) {
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        const origin = p.clone().add(new THREE.Vector3(0, 0.6, 0));
+        fireWeapon(dir, origin);
+        sounds.playGunshot(currentWeapon.name);
+        lastFired.current = now;
       }
     }
   });
 
-  // Handle Build mode toggle on keydown to avoid rapid flipping
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'KeyB') {
-        useGameStore.getState().toggleBuildMode();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
     <group ref={playerRef} position={[0, 1, 0]}>
+      {/* Body */}
       <mesh castShadow>
-        <capsuleGeometry args={[0.5, 1, 4, 8]} />
-        <meshStandardMaterial color="#00c8ff" />
+        <capsuleGeometry args={[0.45, 1, 4, 8]} />
+        <meshStandardMaterial color={skin.color} emissive={skin.emissive} emissiveIntensity={0.4} />
       </mesh>
-      {/* Direction indicator */}
-      <mesh position={[0, 0.5, 0.6]}>
-        <boxGeometry args={[0.2, 0.2, 0.5]} />
-        <meshStandardMaterial color="#ffcc00" />
+      {/* Head */}
+      <mesh position={[0, 0.9, 0]} castShadow>
+        <sphereGeometry args={[0.3, 10, 10]} />
+        <meshStandardMaterial color={skin.color} emissive={skin.emissive} emissiveIntensity={0.5} />
       </mesh>
-
-      {/* Build Preview */}
+      {/* Weapon indicator */}
+      <mesh position={[0.5, 0.2, 0.3]}>
+        <boxGeometry args={[0.15, 0.12, 0.7]} />
+        <meshStandardMaterial color={currentWeapon.color} emissive={currentWeapon.color} emissiveIntensity={0.6} />
+      </mesh>
+      {/* Direction dot */}
+      <mesh position={[0, 0.5, 0.55]}>
+        <sphereGeometry args={[0.08, 6, 6]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      {/* Player glow */}
+      <pointLight color={skin.color} intensity={1.5} distance={4} position={[0, 0.5, 0]} />
+      {/* Build preview */}
       {isBuildMode && (
-        <mesh position={[0, 0.5, 3]} transparent opacity={0.5}>
+        <mesh position={[0, 0.5, 3]}>
           <boxGeometry args={[4, 3, 0.5]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.5} />
+          <meshBasicMaterial color="#00c8ff" transparent opacity={0.35} wireframe />
         </mesh>
       )}
     </group>
