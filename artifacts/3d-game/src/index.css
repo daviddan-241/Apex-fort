@@ -1,16 +1,97 @@
 @import "tailwindcss";
 
 @layer base {
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: #000;
     color: #fff;
     font-family: 'Segoe UI', system-ui, sans-serif;
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+@keyframes float-up {
+  0%   { transform: translateY(0) translateX(-50%); opacity: 1; }
+  100% { transform: translateY(-60px) translateX(-50%); opacity: 0; }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.9; }
+  50%  { transform: scale(1.06); opacity: 0.6; }
+  100% { transform: scale(0.9); opacity: 0.9; }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes slide-in-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(0); }
+  40%           { transform: scale(1); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes glider-drop {
+  0%   { transform: translateY(0); }
+  60%  { transform: translateY(6px); }
+  100% { transform: translateY(0); }
+}
+@keyframes bus-wobble {
+  0%, 100% { transform: rotate(-1deg) translateY(0); }
+  50%       { transform: rotate(1deg) translateY(-3px); }
+}
+@keyframes lobby-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes xp-fill {
+  from { width: 0%; }
+  to   { width: var(--xp-percent); }
+}
+@keyframes notification-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,80,0,0.6); }
+  50%       { box-shadow: 0 0 0 6px rgba(255,80,0,0); }
+}
+@keyframes stars-twinkle {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 1; }
+}
+@keyframes drop-trail {
+  0%   { opacity: 0.7; height: 0px; }
+  100% { opacity: 0; height: 120px; }
+}
+@keyframes landing-impact {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(3); opacity: 0.5; }
+  100% { transform: scale(6); opacity: 0; }
+}
+@keyframes tab-highlight {
+  from { opacity: 0; transform: scaleX(0); }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+@keyframes card-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,180,0,0.3); }
+  50%       { box-shadow: 0 0 24px rgba(255,180,0,0.7); }
+}
+
+.lobby-btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.lobby-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  background-size: 400px 100%;
+  animation: shimmer 2.5s infinite linear;
 }
