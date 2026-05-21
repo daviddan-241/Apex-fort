@@ -5,6 +5,7 @@ export type WeaponType = "AR" | "Shotgun" | "Sniper" | "SMG" | "Pistol" | "Picka
 export type BuildPieceType = "wall" | "floor" | "ramp" | "roof" | "stair";
 export type MaterialType = "wood" | "stone" | "metal";
 export type RarityType = "common" | "uncommon" | "rare" | "epic" | "legendary";
+export type VehicleType = "car" | "truck" | "bike";
 
 export interface Weapon {
   type: WeaponType;
@@ -32,6 +33,17 @@ export interface CharacterDef {
   tactical: string;
   ultimate: string;
   description: string;
+}
+
+export interface VehicleState {
+  id: string;
+  type: VehicleType;
+  x: number;
+  z: number;
+  yaw: number;
+  health: number;
+  occupied: boolean;
+  speed: number;
 }
 
 export interface Bot {
@@ -124,4 +136,8 @@ export interface GameState {
   locationName: string;
   xp: number;
   level: number;
+  inVehicle: boolean;
+  vehicleId: string | null;
+  vehicleSpeed: number;
+  gameVersion: string;
 }
