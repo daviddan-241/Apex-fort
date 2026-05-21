@@ -54,13 +54,24 @@ export default function Game() {
           shadow-camera-top={180} shadow-camera-bottom={-180}
           shadow-camera-near={1} shadow-camera-far={400}
         />
-        <directionalLight position={[-30, 50, -60]} intensity={0.4} color="#a0c0ff" />
-        <hemisphereLight args={["#87ceeb", "#4a8a28", 0.5]} />
-        <fogExp2 attach="fog" args={["#c8dff0", 0.0025]} />
+        {/* Sunset lighting matching IMG_5048 pink/orange sky */}
+        <directionalLight position={[80, 30, -50]} intensity={1.4} color="#ff9060" castShadow />
+        <directionalLight position={[-30, 50, 40]} intensity={0.5} color="#ffb0c0" />
+        <hemisphereLight args={["#ffb580", "#5a8a28", 0.65]} />
+        <fogExp2 attach="fog" args={["#e89070", 0.0018]} />
 
-        {/* Sky */}
-        <Sky distance={1800} sunPosition={[80, 40, -60]} inclination={0.52} azimuth={0.28} turbidity={5} rayleigh={1.2} mieCoefficient={0.005} mieDirectionalG={0.8} />
-        <Stars radius={400} depth={80} count={2000} factor={4} fade />
+        {/* Sky — vibrant pink/orange sunset matching the reference screenshots */}
+        <Sky
+          distance={1800}
+          sunPosition={[2, 0.18, -1]}
+          inclination={0.58}
+          azimuth={0.22}
+          turbidity={9}
+          rayleigh={3.5}
+          mieCoefficient={0.012}
+          mieDirectionalG={0.88}
+        />
+        <Stars radius={400} depth={80} count={1200} factor={3} fade />
 
         <Suspense fallback={null}>
           <Terrain />
