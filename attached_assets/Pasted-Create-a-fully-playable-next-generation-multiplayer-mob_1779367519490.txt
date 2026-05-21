@@ -1,0 +1,401 @@
+Create a fully playable next-generation multiplayer mobile battle royale game inspired by the fun, polish, scale, responsiveness, and social experience of top AAA games like Fortnite, while using 100% original assets, branding, maps, code, UI, characters, music, animations, and effects to avoid copyright violations.
+
+The game must feel extremely modern, premium, addictive, competitive, optimized, realistic, and console-quality on mobile.
+
+MAIN OBJECTIVE:
+Build a production-ready Android + iPhone multiplayer battle royale game with:
+- Offline Bluetooth multiplayer
+- Wi-Fi LAN multiplayer
+- Expandable online multiplayer architecture
+- Ultra smooth gameplay
+- Console-quality graphics
+- Fast building mechanics
+- Realistic combat
+- Massive progression systems
+- AAA-quality UI/UX
+- Optimized mobile performance
+
+The final experience should feel like a real premium mobile esports-quality game.
+
+====================================
+CORE GAMEPLAY
+====================================
+
+Create:
+- Third-person battle royale shooter
+- Optional first-person mode
+- Solo / Duo / Squad support
+- Team deathmatch
+- Creative sandbox mode
+- 1v1 private rooms
+- Open world battle royale map
+- Dynamic shrinking storm system
+- Randomized loot spawning
+- Revive & reboot mechanics
+- Respawn game modes
+- Ranked competitive mode
+- Spectator mode
+- Replay/cinematic system
+- Dynamic events during matches
+
+Gameplay should feel:
+- Fast
+- Smooth
+- Highly responsive
+- Competitive
+- Skill-based
+- Fun and arcade-like
+- Mobile optimized
+
+====================================
+ADVANCED BUILDING SYSTEM
+====================================
+
+Create a lightning-fast smooth building system with:
+- Walls
+- Floors
+- Roofs
+- Stairs
+- Edit mode
+- Instant placement
+- Turbo building
+- Material harvesting
+- Destructible structures
+- Real-time structure damage
+- Physics-based destruction
+- Low-latency multiplayer sync
+
+Building should feel fluid and responsive even on weaker devices.
+
+====================================
+GRAPHICS & VISUAL QUALITY
+====================================
+
+Target AAA Unreal Engine quality visuals:
+
+- High-end realistic stylized graphics
+- Bright colorful world
+- Dynamic lighting
+- HDR rendering
+- Real-time shadows
+- Global illumination
+- Day/night cycle
+- Dynamic weather system
+- Rain
+- Fog
+- Wind simulation
+- Water reflections
+- Volumetric clouds
+- Grass interaction physics
+- High-quality explosions
+- Cinematic post-processing
+- Bloom
+- Motion blur
+- Anti-aliasing
+- Realistic particles
+- GPU optimization
+- Adaptive graphics scaling
+
+Performance targets:
+- 60 FPS on modern devices
+- Stable gameplay on weaker phones
+- Battery optimization
+- Memory optimization
+- Dynamic texture scaling
+
+====================================
+CHARACTERS & COSMETICS
+====================================
+
+Create:
+- Fully customizable characters
+- Male & female avatars
+- Original futuristic skins
+- Outfit customization
+- Facial animations
+- Smooth animation blending
+- Emotes
+- Dance animations
+- Backpack cosmetics
+- Gliders
+- Pickaxe/melee tools
+- Reactive cosmetics
+- Seasonal cosmetics
+
+Movement and animation quality must feel AAA-level.
+
+====================================
+WEAPONS & COMBAT
+====================================
+
+Include:
+- Assault rifles
+- SMGs
+- Shotguns
+- Pistols
+- Snipers
+- Rocket launchers
+- Grenades
+- Throwable gadgets
+- Healing systems
+- Rare/mythic weapon tiers
+- Weapon rarity colors
+- Reload animations
+- Recoil system
+- Bullet physics
+- Hit markers
+- Damage indicators
+- Weapon attachments
+- Realistic effects
+- Responsive aiming
+
+Combat should feel:
+- Satisfying
+- Fast
+- Competitive
+- Smooth
+- High-skill
+
+====================================
+MOVEMENT SYSTEM
+====================================
+
+Implement:
+- Sprinting
+- Sliding
+- Mantling
+- Climbing
+- Swimming
+- Crouching
+- Parkour movement
+- Zip lines
+- Air movement
+- Jump mechanics
+- Vehicle driving
+- Drift system
+
+Vehicles:
+- Cars
+- Motorbikes
+- Boats
+- Helicopters
+
+Movement must feel fluid, modern, responsive, and optimized.
+
+====================================
+BLUETOOTH MULTIPLAYER
+====================================
+
+Implement fully working offline multiplayer using Bluetooth:
+
+- Nearby device discovery
+- Instant room hosting
+- Join nearby matches
+- Stable peer-to-peer networking
+- Low latency synchronization
+- Match state syncing
+- Real-time movement sync
+- Offline multiplayer support
+- Auto reconnect system
+- Match recovery support
+
+Bluetooth multiplayer should support:
+- 2–16 nearby players
+- Fast sync
+- Smooth combat
+- Local tournaments
+
+====================================
+WI-FI LAN MULTIPLAYER
+====================================
+
+Create:
+- Local Wi-Fi room discovery
+- Auto-detect nearby games
+- LAN matchmaking
+- Stable synchronization
+- Host migration
+- Low-latency networking
+- Fast packet optimization
+
+====================================
+FUTURE ONLINE MULTIPLAYER
+====================================
+
+Prepare scalable online architecture for:
+- Dedicated servers
+- Matchmaking
+- Friends system
+- Party system
+- Global chat
+- Cross-platform play
+- Voice chat
+- Cloud saving
+- Live events
+- Seasonal updates
+- Anti-cheat systems
+
+====================================
+SOCIAL SYSTEMS
+====================================
+
+Build:
+- Friends list
+- Guild/clan system
+- Party lobbies
+- Team voice chat
+- Text chat
+- Invite nearby players
+- Emote wheel
+- Player profiles
+- Match history
+- Statistics tracking
+- Leaderboards
+- Tournament system
+- Achievement system
+
+====================================
+SMART AI SYSTEM
+====================================
+
+Create advanced AI bots with:
+- Human-like movement
+- Combat intelligence
+- Looting behavior
+- Building behavior
+- Dynamic pathfinding
+- Difficulty scaling
+- Team coordination
+- Offline bot battles
+- Practice mode
+
+Bots should realistically simulate real players.
+
+====================================
+AAA UI/UX DESIGN
+====================================
+
+Create a highly polished futuristic interface with:
+- Animated menus
+- Smooth transitions
+- Premium AAA design
+- Neon blue/red/gold accents
+- Modern typography
+- Dynamic backgrounds
+- Touch optimized controls
+- Controller support
+- Inventory system
+- Mini-map
+- Compass
+- Health/shield bars
+- Battle pass UI
+- Event system UI
+- Shop UI
+- Progression UI
+
+UI should feel extremely premium and modern.
+
+====================================
+AUDIO SYSTEM
+====================================
+
+Generate:
+- Realistic weapon sounds
+- Positional audio
+- Footstep sounds
+- Explosion effects
+- Dynamic combat music
+- Lobby music
+- Environmental ambience
+- Voice chat optimization
+- Spatial sound effects
+
+====================================
+PROGRESSION & MONETIZATION
+====================================
+
+Include:
+- XP leveling
+- Battle pass system
+- Cosmetic-only shop
+- Seasonal content
+- Daily rewards
+- Weekly challenges
+- Unlock systems
+- Achievement rewards
+- Progress tracking
+
+Avoid pay-to-win mechanics.
+
+====================================
+TECHNICAL REQUIREMENTS
+====================================
+
+Use:
+- Unreal Engine 5 preferred
+- Or high-end Unity setup
+- Modular scalable architecture
+- Clean production-ready code
+- GPU optimization
+- Memory optimization
+- Bluetooth networking framework
+- LAN multiplayer framework
+- Cross-platform support
+- Android + iOS support
+- Asset streaming
+- Dynamic loading systems
+- Security systems
+- Anti-cheat protection
+
+====================================
+AUTO CONTENT GENERATION
+====================================
+
+Automatically generate original:
+- Maps
+- Characters
+- Weapons
+- UI assets
+- Icons
+- Animations
+- Sound effects
+- Music
+- Visual effects
+- Loading screens
+- Cosmetics
+- Game logo
+- Promotional art
+
+Everything must be original and copyright-safe.
+
+====================================
+FINAL OUTPUT
+====================================
+
+Generate:
+- Complete source code
+- Android APK build
+- iOS build files
+- Setup instructions
+- Bluetooth multiplayer setup
+- LAN multiplayer setup
+- Admin panel
+- Debug tools
+- Performance profiler
+- Update system
+- Optimization tools
+- Documentation
+- Deployment instructions
+
+Continue automatically improving:
+- Graphics
+- Networking
+- Controls
+- Performance
+- UI/UX
+- Combat feel
+- Animations
+- Stability
+- Optimization
+
+Keep upgrading the project until it feels like a polished, premium, next-generation mobile multiplayer battle royale experience with smooth gameplay, stable Bluetooth multiplayer, responsive controls, realistic visuals, addictive combat, and console-quality performance.
