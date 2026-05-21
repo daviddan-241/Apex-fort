@@ -27,6 +27,7 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
   const frameRef = useRef(0);
+  const jumpPressedRef = useRef(false);
 
   const currentWeapon = useGameStore((s) => s.currentWeapon);
   const buildMode = useGameStore((s) => s.buildMode);
@@ -36,12 +37,17 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
     setSelectedBuildPiece, setLocationName, addDamageNumber,
   } = useGameStore();
 
-  // Pointer lock
+  // Expose yaw for compass
+  useEffect(() => {
+    (window as any).__playerYaw = 0;
+  }, []);
+
+  // Pointer lock (desktop)
   useEffect(() => {
     const canvas = document.querySelector("canvas");
     if (!canvas) return;
     const onClick = () => {
-      if (!document.pointerLockElement) canvas.requestPointerLock();
+      if (!document.pointerLockElement && !(window as any).__isMobile) canvas.requestPointerLock();
     };
     canvas.addEventListener("click", onClick);
     return () => canvas.removeEventListener("click", onClick);
@@ -56,11 +62,13 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
       if (k === "b") { toggleBuildMode(); return; }
       if (k === "e") { useTactical(); return; }
       if (k === "q") { useUltimate(); return; }
-      if (k === "1") setActiveSlot(0);
-      if (k === "2") setActiveSlot(1);
-      if (k === "3") setActiveSlot(2);
-      if (k === "4") setActiveSlot(3);
-      if (k === "5") setActiveSlot(4);
+      if (!buildMode) {
+        if (k === "1") setActiveSlot(0);
+        if (k === "2") setActiveSlot(1);
+        if (k === "3") setActiveSlot(2);
+        if (k === "4") setActiveSlot(3);
+        if (k === "5") setActiveSlot(4);
+      }
       if (k === " ") {
         if (onGroundRef.current) {
           velRef.current.y = JUMP_VEL;
@@ -68,7 +76,6 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
         }
         e.preventDefault();
       }
-      // Build piece selection in build mode
       if (buildMode) {
         if (k === "1") setSelectedBuildPiece("wall");
         if (k === "2") setSelectedBuildPiece("floor");
@@ -115,17 +122,55 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
     const dt = Math.min(delta, 0.05);
     frameRef.current++;
     const keys = keysRef.current;
-    const isSprinting = !!(keys["shift"] || keys["arrowup"]) && !!(keys["w"] || keys["arrowup"]);
+
+    // ── Mobile input ──
+    const mob = (window as any).__mobileInput;
+    if (mob) {
+      // Apply look delta from mobile right-drag
+      if (mob.lookDeltaX !== 0 || mob.lookDeltaY !== 0) {
+        yawRef.current -= mob.lookDeltaX;
+        pitchRef.current -= mob.lookDeltaY;
+        pitchRef.current = Math.max(-1.1, Math.min(0.7, pitchRef.current));
+        mob.lookDeltaX = 0;
+        mob.lookDeltaY = 0;
+      }
+      // Mobile fire
+      if (mob.fire) shootPressedRef.current = true;
+      else if (!(window as any).__isMobile) { /* desktop handles its own */ }
+      else shootPressedRef.current = false;
+
+      // Mobile jump
+      if (mob.jump && !jumpPressedRef.current && onGroundRef.current) {
+        velRef.current.y = JUMP_VEL;
+        onGroundRef.current = false;
+        jumpPressedRef.current = true;
+      }
+      if (!mob.jump) jumpPressedRef.current = false;
+    }
+
+    // ── Movement ──
+    const mobMoveX = mob?.moveX ?? 0;
+    const mobMoveY = mob?.moveY ?? 0;
+    const hasMobMove = Math.abs(mobMoveX) > 0.05 || Math.abs(mobMoveY) > 0.05;
+
+    const isSprinting = (!hasMobMove && !!(keys["shift"]) && !!(keys["w"] || keys["arrowup"]));
     setSprinting(isSprinting);
     const speed = isSprinting ? SPRINT_SPEED : MOVE_SPEED;
 
     const fwd = new THREE.Vector3(-Math.sin(yawRef.current), 0, -Math.cos(yawRef.current));
     const rgt = new THREE.Vector3(Math.cos(yawRef.current), 0, -Math.sin(yawRef.current));
     const move = new THREE.Vector3();
-    if (keys["w"] || keys["arrowup"]) move.add(fwd);
-    if (keys["s"] || keys["arrowdown"]) move.sub(fwd);
-    if (keys["a"] || keys["arrowleft"]) move.sub(rgt);
-    if (keys["d"] || keys["arrowright"]) move.add(rgt);
+
+    if (hasMobMove) {
+      // Mobile joystick movement (mobMoveX = right, mobMoveY = forward)
+      move.addScaledVector(fwd, -mobMoveY);
+      move.addScaledVector(rgt, mobMoveX);
+    } else {
+      if (keys["w"] || keys["arrowup"]) move.add(fwd);
+      if (keys["s"] || keys["arrowdown"]) move.sub(fwd);
+      if (keys["a"] || keys["arrowleft"]) move.sub(rgt);
+      if (keys["d"] || keys["arrowright"]) move.add(rgt);
+    }
     if (move.lengthSq() > 0) move.normalize().multiplyScalar(speed);
 
     velRef.current.x = move.x;
@@ -149,17 +194,18 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
     camera.position.copy(posRef.current).add(new THREE.Vector3(0, 1.75, 0));
     camera.quaternion.setFromEuler(new THREE.Euler(pitchRef.current, yawRef.current, 0, "YXZ"));
 
-    // Update location every 30 frames
+    // Expose yaw for compass HUD
+    (window as any).__playerYaw = yawRef.current;
+
     if (frameRef.current % 30 === 0) {
       setLocationName(getLocationName(posRef.current.x, posRef.current.z));
     }
 
-    // Shooting / harvesting
+    // ── Shooting / harvesting ──
     const now = Date.now();
     const fireRate = currentWeapon?.fireRate ?? 300;
     if (shootPressedRef.current && !buildMode && now - lastShotRef.current >= fireRate) {
       lastShotRef.current = now;
-
       if (currentWeapon?.type === "Pickaxe") {
         if (harvestCooldownRef.current <= 0) {
           harvestCooldownRef.current = 0.55;
@@ -179,12 +225,7 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
             (Math.random() - 0.5) * spread * 2,
             0
           )).normalize();
-          onShoot(
-            posRef.current.clone().add(new THREE.Vector3(0, 1.65, 0)),
-            d,
-            (currentWeapon?.damage ?? 10) / pellets,
-            true
-          );
+          onShoot(posRef.current.clone().add(new THREE.Vector3(0, 1.65, 0)), d, (currentWeapon?.damage ?? 10) / pellets, true);
         }
       }
     }
@@ -194,8 +235,7 @@ export default function Player({ onShoot, onHarvest }: PlayerProps) {
     const store = useGameStore.getState();
     const dx = posRef.current.x - store.stormCenter.x;
     const dz = posRef.current.z - store.stormCenter.y;
-    const distFromCenter = Math.sqrt(dx * dx + dz * dz);
-    store.setInStorm(distFromCenter > store.stormRadius);
+    store.setInStorm(Math.sqrt(dx * dx + dz * dz) > store.stormRadius);
   });
 
   return null;
