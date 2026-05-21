@@ -1,32 +1,23 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import MainGame from "./game/Game";
+import { useGameStore } from "./store/gameStore";
+import MainMenu from "./components/ui/MainMenu";
+import CharacterSelect from "./components/ui/CharacterSelect";
+import VictoryScreen from "./components/ui/VictoryScreen";
+import Game from "./components/game/Game";
 
-const queryClient = new QueryClient();
+export default function App() {
+  const phase = useGameStore((s) => s.phase);
 
-function Router() {
   return (
-    <Switch>
-      <Route path="/" component={MainGame} />
-      <Route component={NotFound} />
-    </Switch>
+    <div style={{ width: "100vw", height: "100vh", overflow: "hidden", background: "#000" }}>
+      {phase === "menu" && <MainMenu />}
+      {phase === "character-select" && <CharacterSelect />}
+      {phase === "playing" && <Game />}
+      {(phase === "victory" || phase === "defeat") && (
+        <>
+          <Game />
+          <VictoryScreen />
+        </>
+      )}
+    </div>
   );
 }
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
-
-export default App;
