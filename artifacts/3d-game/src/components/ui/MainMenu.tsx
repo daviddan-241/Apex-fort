@@ -1,432 +1,468 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useGameStore } from "../../store/gameStore";
 import { CHARACTERS } from "../../data/characters";
-
-const SEASON = 3;
-const BATTLE_PASS_TIER = 47;
-const BATTLE_PASS_MAX = 100;
-const VBUCKS = 1340;
-
-const TIPS = [
-  "Harvest trees for wood, rocks for stone, and metal structures for metal!",
-  "Build a 1x1 box to protect yourself when healing.",
-  "Chests (golden glow) always contain Rare or better weapons.",
-  "The storm shrinks every few minutes — watch the minimap circle.",
-  "Use E for Tactical and Q for Ultimate when cooldowns are ready.",
-];
-
-const FEATURED_ITEMS = [
-  { name: "Reaper Skin", rarity: "legendary", price: 2000, color: "#7c3aed", icon: "💀" },
-  { name: "Neon Wings", rarity: "epic", price: 1500, color: "#db2777", icon: "🪽" },
-  { name: "Storm Rider", rarity: "rare", price: 1200, color: "#2563eb", icon: "⚡" },
-  { name: "Gold Wrap", rarity: "uncommon", price: 800, color: "#d97706", icon: "✨" },
-];
-
-const DAILY_QUESTS = [
-  { text: "Deal 500 damage to opponents", current: 120, goal: 500, xp: 15000 },
-  { text: "Outlive 20 opponents", current: 8, goal: 20, xp: 12000 },
-  { text: "Harvest 200 stone", current: 45, goal: 200, xp: 8000 },
-];
-
-const NAV_TABS = [
-  { id: "battle-royale", label: "BATTLE ROYALE", icon: "🎯" },
-  { id: "creative", label: "CREATIVE", icon: "🏗️" },
-  { id: "career", label: "CAREER", icon: "📋" },
-  { id: "shop", label: "STORE", icon: "🛒" },
-];
-
-export default function MainMenu() {
-  const setPhase = useGameStore((s) => s.setPhase);
-  const reset = useGameStore((s) => s.reset);
-  const [activeTab, setActiveTab] = useState("battle-royale");
-  const [tipIdx, setTipIdx] = useState(0);
-  const [showCharModal, setShowCharModal] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
-  const [charIdx, setCharIdx] = useState(0);
-  const char = CHARACTERS[charIdx % CHARACTERS.length];
-
-  useEffect(() => {
-    const t = setInterval(() => setTipIdx((i) => (i + 1) % TIPS.length), 5000);
-    return () => clearInterval(t);
-  }, []);
-
-  const handlePlay = () => {
-    reset();
-    setPhase("character-select");
-  };
-
-  return (
-    <div style={{ position: "fixed", inset: 0, overflow: "hidden", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      {/* Background — island panorama */}
-      <div style={{
-        position: "absolute", inset: 0,
-        backgroundImage: "url('/fortnite-bg.jpg')",
-        backgroundSize: "cover", backgroundPosition: "center 40%",
-        filter: "brightness(0.72) saturate(1.1)",
-      }} />
-
-      {/* Gradient overlays */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 50%, rgba(0,5,20,0.65) 100%)" }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.55) 0%, transparent 45%, rgba(0,0,0,0.35) 100%)" }} />
-
-      {/* ── TOP BAR ── */}
-      <TopBar charIdx={charIdx} setCharIdx={setCharIdx} char={char} />
-
-      {/* ── CENTER CHARACTER ── */}
-      <CharacterShowcase char={char} onCustomize={() => setShowCharModal(true)} />
-
-      {/* ── BATTLE PASS BAR (below character, above nav) ── */}
-      <BattlePassBar tier={BATTLE_PASS_TIER} max={BATTLE_PASS_MAX} />
-
-      {/* ── BOTTOM SECTION ── */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-        {/* Nav tabs */}
-        <NavBar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-        {/* Play / panel area */}
-        <div style={{
-          background: "linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7))",
-          padding: "14px 20px 24px",
-          display: "flex", alignItems: "flex-end", gap: 14,
-        }}>
-          {/* Left panel — daily quests */}
-          <div style={{ flex: 1, maxWidth: 260 }}>
-            <DailyQuestsPanel />
-          </div>
-
-          {/* CENTER — PLAY BUTTON */}
-          <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-            {/* Mode label */}
-            <div style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "3px 16px", display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 2 }}>SOLO</span>
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 10 }}>▼</span>
-            </div>
-            {/* Main play button */}
-            <button
-              className="lobby-btn-primary"
-              onClick={handlePlay}
-              style={{
-                width: 240, height: 66, fontSize: 22, fontWeight: 900,
-                letterSpacing: 5, textTransform: "uppercase", cursor: "pointer",
-                background: "linear-gradient(135deg, #ff8c00 0%, #ff5500 40%, #ff8c00 100%)",
-                border: "3px solid rgba(255,255,255,0.35)",
-                borderRadius: 8, color: "#fff",
-                textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                boxShadow: "0 0 30px rgba(255,120,0,0.6), 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3)",
-                transition: "transform 0.12s, box-shadow 0.12s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.05)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 50px rgba(255,120,0,0.9), 0 12px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 30px rgba(255,120,0,0.6), 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3)";
-              }}
-            >
-              PLAY
-            </button>
-            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, letterSpacing: 1.5 }}>30 PLAYERS · SOLO</div>
-          </div>
-
-          {/* Right panel — featured store items */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, letterSpacing: 2, fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>FEATURED</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {FEATURED_ITEMS.map((item, i) => (
-                <FeaturedItem key={i} item={item} hovered={hoveredItem === i} onHover={(v) => setHoveredItem(v ? i : null)} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tip bar */}
-      <div style={{
-        position: "absolute", bottom: 148, left: "50%", transform: "translateX(-50%)",
-        background: "rgba(0,0,0,0.5)", borderRadius: 20, padding: "5px 18px",
-        color: "rgba(255,255,255,0.55)", fontSize: 11, whiteSpace: "nowrap", zIndex: 10,
-        border: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8, alignItems: "center",
-      }}>
-        <span style={{ color: "#ffd700", fontSize: 10 }}>💡</span>
-        <span style={{ transition: "opacity 0.5s" }}>{TIPS[tipIdx]}</span>
-      </div>
-    </div>
-  );
-}
-
-/* ── TOP BAR ── */
-function TopBar({ charIdx, setCharIdx, char }: any) {
-  return (
-    <div style={{
-      position: "absolute", top: 0, left: 0, right: 0, zIndex: 20,
-      background: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent)",
-      padding: "10px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
-    }}>
-      {/* Left: Avatar + level */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{
-          width: 46, height: 46, borderRadius: "50%", cursor: "pointer",
-          background: `radial-gradient(circle at 35% 35%, ${char.accentColor}, ${char.color})`,
-          border: "2px solid rgba(255,255,255,0.4)",
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-          boxShadow: `0 0 12px ${char.color}88`,
-        }} onClick={() => setCharIdx((i: number) => (i + 1) % 8)}>
-          {CHAR_ICONS[char.id]}
-        </div>
-        <div>
-          <div style={{ color: "#fff", fontSize: 13, fontWeight: 800, lineHeight: 1 }}>Commander</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3 }}>
-            <LevelBadge level={47} />
-            <div style={{ height: 4, width: 60, background: "rgba(255,255,255,0.15)", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ width: "62%", height: "100%", background: "linear-gradient(90deg, #00d4ff, #0088ff)" }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Center: Game Logo */}
-      <div style={{ textAlign: "center", lineHeight: 0.85 }}>
-        <div style={{ fontSize: 9, letterSpacing: 7, color: "#00d4ff", fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>SEASON {SEASON}</div>
-        <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1, textTransform: "uppercase" }}>
-          <span style={{ color: "#fff", textShadow: "0 0 20px rgba(0,200,255,0.4)" }}>APEX </span>
-          <span style={{ color: "#00d4ff", textShadow: "0 0 20px rgba(0,200,255,0.7)" }}>FORT</span>
-        </div>
-      </div>
-
-      {/* Right: V-Bucks + icons */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 5,
-          background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,215,0,0.35)",
-          borderRadius: 20, padding: "5px 12px",
-        }}>
-          <span style={{ fontSize: 14 }}>⭐</span>
-          <span style={{ color: "#ffd700", fontWeight: 800, fontSize: 13 }}>{VBUCKS.toLocaleString()}</span>
-        </div>
-        <TopIconBtn icon="🔔" badge={3} />
-        <TopIconBtn icon="👥" badge={0} />
-        <TopIconBtn icon="⚙️" badge={0} />
-      </div>
-    </div>
-  );
-}
-
-function LevelBadge({ level }: { level: number }) {
-  return (
-    <div style={{
-      background: "linear-gradient(135deg, #ff8c00, #ff5500)",
-      borderRadius: 3, padding: "1px 5px", fontSize: 9, fontWeight: 900, color: "#fff", letterSpacing: 1,
-    }}>LVL {level}</div>
-  );
-}
-
-function TopIconBtn({ icon, badge }: { icon: string; badge: number }) {
-  return (
-    <div style={{ position: "relative", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.08)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", fontSize: 16 }}>
-      {icon}
-      {badge > 0 && (
-        <div style={{
-          position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%",
-          background: "#ff3300", fontSize: 8, fontWeight: 900, color: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          animation: "notification-pulse 2s infinite",
-        }}>{badge}</div>
-      )}
-    </div>
-  );
-}
-
-/* ── CHARACTER SHOWCASE ── */
-function CharacterShowcase({ char, onCustomize }: any) {
-  return (
-    <div style={{
-      position: "absolute", right: "8%", top: "50%", transform: "translateY(-55%)",
-      display: "flex", flexDirection: "column", alignItems: "center", zIndex: 5,
-    }}>
-      {/* Character 3D-ish avatar */}
-      <div style={{ animation: "lobby-float 3.5s ease-in-out infinite", position: "relative" }}>
-        {/* Glow base */}
-        <div style={{
-          position: "absolute", bottom: -20, left: "50%", transform: "translateX(-50%)",
-          width: 120, height: 20, borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${char.color}66, transparent 70%)`,
-          filter: "blur(4px)",
-        }} />
-        {/* Main character body */}
-        <div style={{ position: "relative", width: 130, height: 200 }}>
-          {/* Body */}
-          <div style={{
-            position: "absolute", left: "50%", top: 50, transform: "translateX(-50%)",
-            width: 70, height: 110, borderRadius: "35% 35% 20% 20% / 30% 30% 20% 20%",
-            background: `linear-gradient(160deg, ${char.accentColor}, ${char.color})`,
-            boxShadow: `0 0 30px ${char.color}88, 0 20px 40px rgba(0,0,0,0.5)`,
-          }} />
-          {/* Head */}
-          <div style={{
-            position: "absolute", left: "50%", top: 8, transform: "translateX(-50%)",
-            width: 52, height: 52, borderRadius: "50%",
-            background: `radial-gradient(circle at 35% 30%, ${char.accentColor}, ${char.color})`,
-            boxShadow: `0 0 20px ${char.color}99`,
-            border: `3px solid ${char.accentColor}`,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: 22 }}>
-              {CHAR_ICONS[char.id]}
-            </div>
-          </div>
-          {/* Weapon */}
-          <div style={{
-            position: "absolute", right: -10, top: 80,
-            width: 14, height: 55, borderRadius: 3,
-            background: "linear-gradient(160deg, #666, #333)",
-            transform: "rotate(15deg)",
-            boxShadow: "0 0 8px rgba(0,0,0,0.5)",
-          }} />
-          {/* Legs */}
-          {[-14, 14].map((x, i) => (
-            <div key={i} style={{
-              position: "absolute", left: `calc(50% + ${x}px)`, top: 148,
-              width: 22, height: 52, borderRadius: "0 0 8px 8px",
-              background: `linear-gradient(160deg, ${char.color}cc, ${char.color}88)`,
-            }} />
-          ))}
-        </div>
-      </div>
-
-      {/* Name + rarity */}
-      <div style={{
-        marginTop: 8, background: "rgba(0,0,0,0.7)", border: `2px solid ${char.color}66`,
-        borderRadius: 6, padding: "6px 18px", textAlign: "center",
-      }}>
-        <div style={{ color: char.accentColor, fontSize: 11, fontWeight: 900, letterSpacing: 3, textTransform: "uppercase" }}>{char.name}</div>
-        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, letterSpacing: 1, marginTop: 1 }}>BATTLE PASS · TIER 47</div>
-      </div>
-      <button
-        onClick={onCustomize}
-        style={{
-          marginTop: 6, fontSize: 10, fontWeight: 800, letterSpacing: 2, padding: "5px 16px",
-          background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)",
-          borderRadius: 4, color: "rgba(255,255,255,0.7)", cursor: "pointer", textTransform: "uppercase",
-        }}
-      >CUSTOMIZE</button>
-    </div>
-  );
-}
-
-/* ── BATTLE PASS BAR ── */
-function BattlePassBar({ tier, max }: { tier: number; max: number }) {
-  return (
-    <div style={{
-      position: "absolute", bottom: 196, left: 16, right: 16, zIndex: 10,
-      background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: 6, padding: "7px 14px",
-      display: "flex", alignItems: "center", gap: 12,
-    }}>
-      <div style={{ background: "linear-gradient(135deg, #ffd700, #ff8c00)", borderRadius: 4, padding: "3px 8px", fontSize: 9, fontWeight: 900, letterSpacing: 2, color: "#000", whiteSpace: "nowrap" }}>
-        BATTLE PASS S{SEASON}
-      </div>
-      <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, whiteSpace: "nowrap" }}>Tier {tier}/{max}</div>
-      <div style={{ flex: 1, height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 4, overflow: "hidden", position: "relative" }}>
-        {/* Tick marks */}
-        {Array.from({ length: 10 }, (_, i) => (
-          <div key={i} style={{ position: "absolute", left: `${(i + 1) * 10}%`, top: 0, bottom: 0, width: 1, background: "rgba(255,255,255,0.1)" }} />
-        ))}
-        <div style={{
-          width: `${(tier / max) * 100}%`, height: "100%",
-          background: "linear-gradient(90deg, #ffd700, #ff8c00)",
-          transition: "width 1s ease",
-        }} />
-      </div>
-      <div style={{ color: "#ffd700", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap" }}>
-        🎁 {max - tier} tiers left
-      </div>
-    </div>
-  );
-}
-
-/* ── NAV BAR ── */
-function NavBar({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (t: string) => void }) {
-  return (
-    <div style={{
-      background: "linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.85))",
-      borderTop: "1px solid rgba(255,255,255,0.08)",
-      display: "flex", justifyContent: "center",
-    }}>
-      {NAV_TABS.map((tab) => {
-        const active = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: 1, maxWidth: 180, padding: "11px 6px 8px",
-              background: active ? "rgba(255,255,255,0.08)" : "transparent",
-              border: "none", borderTop: active ? "3px solid #ff8c00" : "3px solid transparent",
-              cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-              transition: "all 0.15s", position: "relative",
-            }}
-          >
-            <span style={{ fontSize: 18 }}>{tab.icon}</span>
-            <span style={{ color: active ? "#fff" : "rgba(255,255,255,0.45)", fontSize: 9, fontWeight: 800, letterSpacing: 1.5, textTransform: "uppercase", transition: "color 0.15s" }}>
-              {tab.label}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ── FEATURED ITEM ── */
-function FeaturedItem({ item, hovered, onHover }: { item: any; hovered: boolean; onHover: (v: boolean) => void }) {
-  return (
-    <div
-      onMouseEnter={() => onHover(true)}
-      onMouseLeave={() => onHover(false)}
-      style={{
-        width: 62, height: 70, borderRadius: 6, cursor: "pointer",
-        background: `linear-gradient(160deg, ${item.color}88, ${item.color}44)`,
-        border: `2px solid ${hovered ? item.color : item.color + "55"}`,
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
-        transition: "all 0.15s",
-        transform: hovered ? "scale(1.08) translateY(-2px)" : "scale(1)",
-        boxShadow: hovered ? `0 0 16px ${item.color}88` : "none",
-      }}
-    >
-      <span style={{ fontSize: 20 }}>{item.icon}</span>
-      <div style={{ color: "#fff", fontSize: 8, fontWeight: 800, textAlign: "center", lineHeight: 1.2, padding: "0 3px" }}>{item.name}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <span style={{ fontSize: 8 }}>⭐</span>
-        <span style={{ color: "#ffd700", fontSize: 8, fontWeight: 700 }}>{item.price}</span>
-      </div>
-    </div>
-  );
-}
-
-/* ── DAILY QUESTS ── */
-function DailyQuestsPanel() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, letterSpacing: 2, fontWeight: 700, textTransform: "uppercase", marginBottom: 2 }}>DAILY QUESTS</div>
-      {DAILY_QUESTS.map((q, i) => (
-        <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 5, padding: "5px 8px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-            <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 10 }}>{q.text}</span>
-            <span style={{ color: "#ffd700", fontSize: 9, fontWeight: 700 }}>{(q.xp / 1000).toFixed(0)}K XP</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,0.1)", borderRadius: 2, overflow: "hidden" }}>
-              <div style={{ width: `${(q.current / q.goal) * 100}%`, height: "100%", background: "#00d4ff" }} />
-            </div>
-            <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9 }}>{q.current}/{q.goal}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const CHAR_ICONS: Record<string, string> = {
   soldier: "🪖", ninja: "🥷", cyber: "🤖", warrior: "⚔️",
   ghost: "👻", hero: "🦸", assassin: "🗡️", thief: "🎭",
 };
+
+const MODES = [
+  { id: "br",    label: "BATTLE ROYALE", sub: "Solo · Fill",    tag: "",       img: "🎯", color: "#1a4a8a" },
+  { id: "squad", label: "BLITZ ROYALE",  sub: "Squad · Fill",   tag: "HOT",    img: "⚡", color: "#4a1a6a" },
+  { id: "build", label: "ZERO BUILD",    sub: "Duos · Fill",    tag: "NEW",    img: "🏗️", color: "#1a6a4a" },
+  { id: "team",  label: "TEAM RUMBLE",   sub: "Team · Fill",    tag: "",       img: "👥", color: "#6a4a1a" },
+];
+
+const SQUAD_SLOTS = [
+  { name: "Rumi-974", platform: "🎮", status: "online",  icon: "🥷" },
+  { name: "JaxPlayer",platform: "📱", status: "online",  icon: "🤖" },
+  { name: null,       platform: "",   status: "empty",   icon: "" },
+];
+
+const NEWS_CARDS = [
+  { title: "BATTLE ROYALE",   tag: "",       color: "#2a4a8a", img: "🎯" },
+  { title: "THE MANDALORIAN", tag: "NEW",    color: "#3a2a5a", img: "⚔️" },
+  { title: "BATTLE LAB",      tag: "",       color: "#1a3a3a", img: "🔬" },
+  { title: "SUPER POWERS",    tag: "UPDATED",color: "#4a2a1a", img: "💥" },
+  { title: "RELOAD",          tag: "HOT",    color: "#5a1a1a", img: "🔄" },
+];
+
+const TIPS = [
+  "Build a 1×1 box for cover while you heal",
+  "High ground wins fights — always push for elevation",
+  "Always loot supply drops — they have legendary loot",
+  "The storm shrinks — watch your minimap circle",
+  "Harvest metal from cars for the strongest builds",
+];
+
+export default function MainMenu() {
+  const setPhase = useGameStore((s) => s.setPhase);
+  const reset = useGameStore((s) => s.reset);
+  const [activeMode, setActiveMode] = useState("squad");
+  const [activeTab, setActiveTab] = useState("play");
+  const [tipIdx, setTipIdx] = useState(0);
+  const [charIdx, setCharIdx] = useState(2); // default cyber = ice-look
+  const char = CHARACTERS[charIdx % CHARACTERS.length];
+
+  useEffect(() => {
+    const t = setInterval(() => setTipIdx(i => (i + 1) % TIPS.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  const selectedMode = MODES.find(m => m.id === activeMode) ?? MODES[0];
+
+  const handlePlay = () => { reset(); setPhase("character-select"); };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, overflow: "hidden", fontFamily: "'Segoe UI', system-ui, sans-serif", userSelect: "none" }}>
+
+      {/* ── HERO BACKGROUND (IMG_5050 - ninja warrior) ── */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: "url('/lobby-hero.jpg')",
+        backgroundSize: "cover", backgroundPosition: "center 30%",
+        filter: "brightness(0.55) saturate(1.2)",
+      }} />
+
+      {/* Purple/sunset atmosphere overlay matching IMG_5049 */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(40,10,60,0.75) 0%, rgba(60,20,30,0.45) 40%, rgba(20,30,60,0.65) 100%)" }} />
+      {/* Bottom fade */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "45%", background: "linear-gradient(to top, rgba(0,0,0,0.92), transparent)" }} />
+      {/* Top fade */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "15%", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)" }} />
+
+      {/* ── TOP NAV BAR (matches IMG_5049 exactly) ── */}
+      <TopNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* ── CENTER: Character Showcase on Platform ── */}
+      <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -58%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 5 }}>
+
+        {/* Player name tag above character */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6, marginBottom: 12,
+          background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)",
+          borderRadius: 20, padding: "4px 14px", backdropFilter: "blur(8px)",
+        }}>
+          <div style={{ background: "linear-gradient(135deg, #9b59b6, #6c3483)", borderRadius: 4, padding: "1px 7px", fontSize: 10, fontWeight: 900, color: "#fff" }}>37</div>
+          <span style={{ fontSize: 11, color: "#fff", fontWeight: 700 }}>TheCassiniJohn</span>
+          <span style={{ fontSize: 12 }}>📱</span>
+          <span style={{ fontSize: 12, opacity: 0.5 }}>🔇</span>
+        </div>
+
+        {/* Character body — ice/armor style like IMG_5049 */}
+        <CharacterShowcase char={char} charIdx={charIdx} setCharIdx={setCharIdx} />
+
+        {/* Glowing platform */}
+        <div style={{ position: "relative", marginTop: -8, width: 180, height: 18 }}>
+          <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: `radial-gradient(ellipse, ${char.accentColor}88 0%, transparent 70%)`, filter: "blur(8px)" }} />
+          {/* Platform circle disc */}
+          <div style={{ position: "absolute", inset: 4, top: 6, borderRadius: "50%", border: `1.5px solid ${char.accentColor}55`, background: `linear-gradient(to bottom, ${char.accentColor}22, transparent)` }} />
+        </div>
+
+        {/* Squad slots below character */}
+        <div style={{ display: "flex", gap: 28, marginTop: 10 }}>
+          {SQUAD_SLOTS.map((slot, i) => (
+            <SquadSlot key={i} slot={slot} charColor={char.accentColor} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── LEFT: News card (small, like IMG_5049 top-left) ── */}
+      <div style={{ position: "absolute", left: 16, top: 58, zIndex: 10, width: 168 }}>
+        <NewsCard title="ISLAND UPDATE" tag="NEW" subtitle="New POIs added: Cyber City, Sunset Shores" color="#1a3a5a" icon="🗺️" />
+      </div>
+
+      {/* ── RIGHT PANEL ── */}
+      <div style={{ position: "absolute", right: 12, top: 58, bottom: 80, zIndex: 10, display: "flex", flexDirection: "column", gap: 6, width: 210 }}>
+        {/* Victory progress */}
+        <VictoryWingsCard />
+        {/* Rewards */}
+        <RewardsCard />
+        {/* Level badge */}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div style={{ background: "linear-gradient(135deg, #ff8c00, #ff5500)", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 900, letterSpacing: 1, color: "#fff" }}>LVL 31</div>
+        </div>
+        <div style={{ flex: 1 }} />
+        {/* Music player */}
+        <MusicPlayer />
+        {/* Chat/Emote/Back buttons */}
+        <div style={{ display: "flex", gap: 5 }}>
+          {["CHAT", "EMOTE", "BACK"].map(label => (
+            <button key={label} onClick={label === "BACK" ? undefined : undefined} style={{
+              flex: 1, padding: "8px 0", background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.18)",
+              borderRadius: 5, color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 1,
+              cursor: "pointer", backdropFilter: "blur(6px)",
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── BOTTOM LEFT: Mode card + PLAY ── */}
+      <div style={{ position: "absolute", bottom: 80, left: 12, zIndex: 10, width: 200 }}>
+        <ModeCard mode={selectedMode} onPlay={handlePlay} onModeChange={() => {
+          const idx = MODES.findIndex(m => m.id === activeMode);
+          setActiveMode(MODES[(idx + 1) % MODES.length].id);
+        }} />
+      </div>
+
+      {/* ── BOTTOM CENTER: News carousel ── */}
+      <div style={{ position: "absolute", bottom: 0, left: 220, right: 230, zIndex: 10, height: 76 }}>
+        <div style={{ display: "flex", gap: 6, height: "100%", alignItems: "flex-end", paddingBottom: 8, overflowX: "auto" }}>
+          {NEWS_CARDS.map((card, i) => (
+            <NewsCarouselCard key={i} card={card} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Tip bar ── */}
+      <div style={{ position: "absolute", bottom: 82, left: "50%", transform: "translateX(-50%)", zIndex: 10, display: "flex", alignItems: "center", gap: 6, background: "rgba(0,0,0,0.5)", borderRadius: 20, padding: "4px 16px", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <span style={{ color: "#ffd700", fontSize: 10 }}>💡</span>
+        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, whiteSpace: "nowrap" }}>{TIPS[tipIdx]}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── TOP NAV BAR ── */
+function TopNavBar({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (t: string) => void }) {
+  const NAV = [
+    { id: "play",   icon: "▶",  label: "PLAY" },
+    { id: "shop",   icon: "🛒", label: "" },
+    { id: "locker", icon: "👕", label: "" },
+    { id: "quests", icon: "⭐", label: "", badge: 3 },
+    { id: "career", icon: "📋", label: "" },
+    { id: "trophy", icon: "🏆", label: "" },
+    { id: "shield", icon: "🛡️", label: "" },
+  ];
+  return (
+    <div style={{
+      position: "absolute", top: 0, left: 0, right: 0, zIndex: 20,
+      background: "rgba(0,0,0,0.72)", borderBottom: "1px solid rgba(255,255,255,0.06)",
+      display: "flex", alignItems: "stretch", height: 48,
+      backdropFilter: "blur(12px)",
+    }}>
+      {NAV.map(tab => {
+        const active = activeTab === tab.id;
+        return (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            background: active ? "rgba(255,255,255,0.1)" : "transparent",
+            borderBottom: active ? "2px solid #fff" : "2px solid transparent",
+            border: "none", padding: "0 14px", cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
+            position: "relative", minWidth: 42,
+          }}>
+            <span style={{ fontSize: 16 }}>{tab.icon}</span>
+            {tab.label && <span style={{ color: active ? "#fff" : "rgba(255,255,255,0.55)", fontSize: 8, fontWeight: 800, letterSpacing: 1 }}>{tab.label}</span>}
+            {tab.badge && <div style={{ position: "absolute", top: 4, right: 8, width: 12, height: 12, borderRadius: "50%", background: "#f39c12", fontSize: 7, fontWeight: 900, color: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>{tab.badge}</div>}
+          </button>
+        );
+      })}
+
+      {/* V-Bucks */}
+      <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "0 14px", borderLeft: "1px solid rgba(255,255,255,0.08)", marginLeft: 4 }}>
+        <span style={{ fontSize: 13 }}>⭐</span>
+        <span style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>1,800</span>
+      </div>
+
+      <div style={{ flex: 1 }} />
+
+      {/* Player avatar top right */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 16px", borderLeft: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: "50%",
+          background: "radial-gradient(circle at 35% 35%, #e94560, #1a1a2e)",
+          border: "2px solid rgba(255,255,255,0.3)",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+        }}>🥷</div>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#2ecc71", border: "1.5px solid rgba(0,0,0,0.5)" }} />
+      </div>
+    </div>
+  );
+}
+
+/* ── CHARACTER SHOWCASE ── */
+function CharacterShowcase({ char, charIdx, setCharIdx }: { char: any; charIdx: number; setCharIdx: (i: number) => void }) {
+  return (
+    <div
+      style={{ animation: "lobby-float 3.2s ease-in-out infinite", cursor: "pointer", position: "relative" }}
+      onClick={() => setCharIdx(charIdx + 1)}
+      title="Click to change character"
+    >
+      {/* Outer glow ring */}
+      <div style={{
+        position: "absolute", inset: -24, borderRadius: "50%",
+        border: `1px solid ${char.accentColor}44`,
+        animation: "pulse-ring 3s infinite",
+      }} />
+      {/* Character body — detailed like ice armor */}
+      <div style={{ position: "relative", width: 140, height: 220 }}>
+        {/* Legs */}
+        {[[-16, 0], [16, 0]].map(([x], i) => (
+          <div key={i} style={{ position: "absolute", bottom: 0, left: `calc(50% + ${x}px)`, transform: "translateX(-50%)" }}>
+            {/* Upper leg */}
+            <div style={{ width: 28, height: 55, borderRadius: "8px 8px 4px 4px", background: `linear-gradient(170deg, ${char.accentColor}, ${char.color})`, marginBottom: 1 }}>
+              <div style={{ width: "70%", height: "40%", margin: "6px auto", borderRadius: 3, background: `${char.accentColor}66` }} />
+            </div>
+            {/* Lower leg / boot */}
+            <div style={{ width: 26, height: 42, borderRadius: "4px 4px 6px 6px", background: `linear-gradient(160deg, ${char.color}, ${char.color}aa)`, marginLeft: 1 }}>
+              <div style={{ position: "absolute", bottom: 0, left: -2, right: -2, height: 10, background: char.color, borderRadius: "0 0 8px 8px" }} />
+            </div>
+          </div>
+        ))}
+        {/* Torso — armored chest */}
+        <div style={{
+          position: "absolute", left: "50%", top: 80, transform: "translateX(-50%)",
+          width: 88, height: 100, borderRadius: "22% 22% 14% 14% / 18% 18% 12% 12%",
+          background: `linear-gradient(155deg, ${char.accentColor}, ${char.color}, ${char.color}88)`,
+          boxShadow: `0 0 30px ${char.accentColor}55, 0 20px 40px rgba(0,0,0,0.6)`,
+        }}>
+          {/* Chest plate */}
+          <div style={{ position: "absolute", top: 8, left: 8, right: 8, height: 35, borderRadius: "10px 10px 6px 6px", background: `${char.accentColor}66`, border: `1px solid ${char.accentColor}88` }} />
+          {/* Belly armor */}
+          <div style={{ position: "absolute", bottom: 8, left: 10, right: 10, height: 20, borderRadius: 4, background: `${char.color}88`, border: `1px solid ${char.accentColor}33` }} />
+          {/* Glow center */}
+          <div style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", width: 14, height: 14, borderRadius: "50%", background: char.accentColor, boxShadow: `0 0 12px ${char.accentColor}` }} />
+        </div>
+        {/* Shoulder pads */}
+        {[[-52, 84], [52, 84]].map(([x, y], i) => (
+          <div key={i} style={{
+            position: "absolute", left: `calc(50% + ${x}px)`, top: y, transform: "translateX(-50%)",
+            width: 24, height: 28, borderRadius: "50% 50% 30% 30%",
+            background: `linear-gradient(140deg, ${char.accentColor}, ${char.color})`,
+            boxShadow: `0 0 10px ${char.accentColor}55`,
+          }} />
+        ))}
+        {/* Arms */}
+        {[[-44, 96], [44, 96]].map(([x, y], i) => (
+          <div key={i} style={{
+            position: "absolute", left: `calc(50% + ${x}px)`, top: y, transform: `translateX(-50%) rotate(${i===0?"-5deg":"5deg"})`,
+            width: 22, height: 68, borderRadius: "30% 30% 20% 20%",
+            background: `linear-gradient(160deg, ${char.accentColor}cc, ${char.color})`,
+          }}>
+            {/* Forearm armor */}
+            <div style={{ position: "absolute", top: "40%", left: 1, right: 1, bottom: 4, borderRadius: "0 0 10px 10px", background: `${char.accentColor}55` }} />
+          </div>
+        ))}
+        {/* Head / Helmet */}
+        <div style={{
+          position: "absolute", left: "50%", top: 14, transform: "translateX(-50%)",
+          width: 62, height: 66, borderRadius: "45% 45% 40% 40%",
+          background: `radial-gradient(circle at 38% 28%, ${char.accentColor}, ${char.color})`,
+          border: `2px solid ${char.accentColor}`,
+          boxShadow: `0 0 20px ${char.accentColor}88, 0 0 40px ${char.accentColor}33`,
+        }}>
+          {/* Visor */}
+          <div style={{ position: "absolute", top: "28%", left: "15%", right: "15%", height: "25%", borderRadius: 4, background: "linear-gradient(135deg, rgba(100,200,255,0.7), rgba(0,100,200,0.5))", boxShadow: "inset 0 0 6px rgba(255,255,255,0.3)" }} />
+          {/* Helmet crest / spikes */}
+          <div style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", width: 8, height: 16, borderRadius: "0 0 4px 4px", background: char.accentColor, clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }} />
+        </div>
+        {/* Weapon (right hand) */}
+        <div style={{ position: "absolute", right: -10, top: 100, transform: "rotate(12deg)" }}>
+          <div style={{ width: 12, height: 55, borderRadius: "2px 2px 4px 4px", background: "linear-gradient(160deg, #555, #222)", boxShadow: `0 0 8px ${char.accentColor}55` }} />
+          <div style={{ width: 18, height: 8, borderRadius: 2, background: "#333", marginTop: 2, marginLeft: -3 }} />
+          {/* Energy glow on weapon */}
+          <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 4, height: "100%", background: `linear-gradient(to bottom, ${char.accentColor}88, transparent)`, borderRadius: 2 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SQUAD SLOT ── */
+function SquadSlot({ slot, charColor }: { slot: any; charColor: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+      <div style={{
+        width: 54, height: 54, borderRadius: "50%",
+        background: slot.status === "empty" ? "rgba(255,255,255,0.06)" : `radial-gradient(circle, ${charColor}44, rgba(0,0,0,0.5))`,
+        border: `1.5px solid ${slot.status === "empty" ? "rgba(255,255,255,0.18)" : charColor + "66"}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        backdropFilter: "blur(8px)",
+        boxShadow: slot.status !== "empty" ? `0 0 12px ${charColor}44` : "none",
+      }}>
+        {slot.status === "empty" ? (
+          <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 20 }}>+</span>
+        ) : (
+          <span style={{ fontSize: 22 }}>{slot.icon}</span>
+        )}
+      </div>
+      {slot.name && (
+        <div style={{ textAlign: "center" }}>
+          <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 8, fontWeight: 700, whiteSpace: "nowrap" }}>{slot.name}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 2, justifyContent: "center" }}>
+            <span style={{ fontSize: 8 }}>{slot.platform}</span>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#2ecc71" }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── MODE CARD ── */
+function ModeCard({ mode, onPlay, onModeChange }: { mode: any; onPlay: () => void; onModeChange: () => void }) {
+  return (
+    <div style={{ background: "rgba(0,0,0,0.82)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, overflow: "hidden", backdropFilter: "blur(16px)" }}>
+      {/* Header banner */}
+      <div style={{ background: mode.color, padding: "7px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 18 }}>{mode.img}</span>
+        <span style={{ color: "#fff", fontSize: 12, fontWeight: 900, letterSpacing: 1 }}>{mode.label}</span>
+        {mode.tag && <div style={{ marginLeft: "auto", background: "rgba(255,255,255,0.2)", borderRadius: 3, padding: "1px 5px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: 1 }}>{mode.tag}</div>}
+      </div>
+      {/* Sub-mode selector */}
+      <div style={{ padding: "7px 12px", display: "flex", alignItems: "center", gap: 6, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>≡=</span>
+        <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, fontWeight: 700 }}>{mode.sub}</span>
+        <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.3)", fontSize: 10, cursor: "pointer" }} onClick={onModeChange}>▼</span>
+      </div>
+      {/* PLAY button */}
+      <div style={{ padding: "8px 12px" }}>
+        <button
+          className="lobby-btn-primary"
+          onClick={onPlay}
+          style={{
+            width: "100%", padding: "11px 0", fontSize: 15, fontWeight: 900,
+            letterSpacing: 5, cursor: "pointer",
+            background: "linear-gradient(135deg, #f1c40f, #f39c12)",
+            border: "none", borderRadius: 6, color: "#000",
+            boxShadow: "0 0 20px rgba(241,196,15,0.4), 0 4px 12px rgba(0,0,0,0.5)",
+            textTransform: "uppercase",
+          }}
+        >
+          PLAY
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── VICTORY WINGS ── */
+function VictoryWingsCard() {
+  return (
+    <div style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", backdropFilter: "blur(10px)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 6, background: "linear-gradient(135deg, #9b59b6, #6c3483)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🪽</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: "#f39c12", fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>LEGENDARY VICTORY WINGS</div>
+          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9, marginTop: 1 }}>35 wins to advance</div>
+        </div>
+      </div>
+      <div style={{ marginTop: 6, height: 3, background: "rgba(255,255,255,0.1)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ width: "20%", height: "100%", background: "linear-gradient(90deg, #9b59b6, #f39c12)" }} />
+      </div>
+    </div>
+  );
+}
+
+/* ── REWARDS CARD ── */
+function RewardsCard() {
+  return (
+    <div style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,180,0,0.3)", borderRadius: 8, padding: "7px 12px", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(10px)", cursor: "pointer" }}>
+      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg, #f39c12, #e67e22)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: "#000" }}>2</div>
+      <div>
+        <div style={{ color: "#ffd700", fontSize: 11, fontWeight: 900 }}>REWARDS TO CLAIM</div>
+        <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 9 }}>Tap to collect</div>
+      </div>
+      <span style={{ marginLeft: "auto", color: "#ffd700", fontSize: 16 }}>›</span>
+    </div>
+  );
+}
+
+/* ── MUSIC PLAYER ── */
+function MusicPlayer() {
+  return (
+    <div style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 10px", backdropFilter: "blur(10px)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 4, background: "linear-gradient(135deg, #e94560, #1a1a2e)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>🎵</div>
+        <div style={{ flex: 1, overflow: "hidden" }}>
+          <div style={{ color: "#fff", fontSize: 9, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Chapter 5 Island Theme</div>
+          <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 8 }}>Apex Fort OST</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 12, alignItems: "center" }}>
+        {["◀◀", "⏸", "▶▶"].map(btn => (
+          <button key={btn} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.6)", fontSize: 12, cursor: "pointer", padding: "2px 4px" }}>{btn}</button>
+        ))}
+        <div style={{ flex: 1, height: 2, background: "rgba(255,255,255,0.1)", borderRadius: 1, overflow: "hidden", marginLeft: 4 }}>
+          <div style={{ width: "35%", height: "100%", background: "#fff" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SMALL NEWS CARD ── */
+function NewsCard({ title, tag, subtitle, color, icon }: { title: string; tag: string; subtitle: string; color: string; icon: string }) {
+  return (
+    <div style={{ background: "rgba(0,0,0,0.72)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, overflow: "hidden", backdropFilter: "blur(10px)" }}>
+      <div style={{ background: color, padding: "20px 12px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+        {tag && <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 3, padding: "1px 5px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: 1 }}>{tag}</div>}
+        <div style={{ fontSize: 24 }}>{icon}</div>
+        <div style={{ color: "#fff", fontSize: 10, fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
+      </div>
+      <div style={{ padding: "5px 8px" }}>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, lineHeight: 1.4, margin: 0 }}>{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── NEWS CAROUSEL CARD ── */
+function NewsCarouselCard({ card }: { card: any }) {
+  return (
+    <div style={{
+      flexShrink: 0, width: 110, height: 68,
+      background: `linear-gradient(160deg, ${card.color}, rgba(0,0,0,0.7))`,
+      border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6,
+      display: "flex", flexDirection: "column", alignItems: "flex-start",
+      justifyContent: "flex-end", padding: "5px 8px", cursor: "pointer",
+      overflow: "hidden", position: "relative", backdropFilter: "blur(8px)",
+      transition: "transform 0.15s",
+    }}>
+      <div style={{ position: "absolute", top: 4, right: 4, fontSize: 18 }}>{card.img}</div>
+      {card.tag && <div style={{ background: "rgba(255,255,255,0.25)", borderRadius: 3, padding: "1px 5px", fontSize: 7, fontWeight: 900, color: "#fff", letterSpacing: 1, marginBottom: 2 }}>{card.tag}</div>}
+      <div style={{ color: "#fff", fontSize: 9, fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.2 }}>{card.title}</div>
+    </div>
+  );
+}
