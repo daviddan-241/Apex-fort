@@ -1,18 +1,16 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
-import charactersRouter from "./characters";
-import weaponsRouter from "./weapons";
-import gameModesRouter from "./gamemodes";
-import systemsRouter from "./systems";
-import progressionRouter from "./progression";
+import projectsRouter from "./projects";
+import filesRouter from "./files";
+import agentsRouter from "./agents";
+import mediaRouter from "./media";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(charactersRouter);
-router.use(weaponsRouter);
-router.use(gameModesRouter);
-router.use(systemsRouter);
-router.use(progressionRouter);
+router.use(projectsRouter);
+router.use(filesRouter);
+router.use(agentsRouter);
+router.use(mediaRouter);
 
 export default router;

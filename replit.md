@@ -1,87 +1,64 @@
-# Apex Fort
+# AI Game Creator
 
-A browser-based 3D battle royale game built with React Three Fiber. 30 players, shrinking storm, building system, weapons with rarity tiers, 8 selectable characters, and full Fortnite-inspired HUD.
+A platform where users enter a game prompt (or upload reference files), and 10+ AI agents generate a complete Unreal Engine 5 project — C++ classes, Blueprints, levels, configs, UMG widgets — downloadable as a zip.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080, routed at `/api`)
+- `pnpm --filter @workspace/ai-game-creator run dev` — run the frontend (port 24116, routed at `/`)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — Postgres connection string, `OPENAI_API_KEY` — OpenAI key for generation
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- Game: React + Vite + @react-three/fiber + @react-three/drei + Three.js + Zustand
+- Frontend: React + Vite + Tailwind + shadcn/ui + Framer Motion (wouter routing)
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
+- DB: PostgreSQL + Drizzle ORM (tables: projects, agent_logs, generated_files, uploaded_files)
+- AI: OpenAI GPT-4o-mini for game planning, C++ code, blueprint generation, image analysis
 - Validation: Zod (`zod/v4`), `drizzle-zod`
+- API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
+- Zip packaging: adm-zip
 
 ## Where things live
 
-- `artifacts/3d-game/src/` — game source
-  - `types/game.ts` — all TypeScript types
-  - `store/gameStore.ts` — Zustand game state
-  - `data/characters.ts` — 8 playable characters
-  - `data/weapons.ts` — all weapons + rarity system + loot table
-  - `components/game/` — 3D scene components (Player, Bots, Terrain, Storm, LootItems, BuildingSystem, Bullets)
-  - `components/ui/` — HUD, Minimap, MainMenu, CharacterSelect, VictoryScreen
-
-## Render Deployment
-
-Apex Fort is a **static SPA** (no server needed). Deploy on Render as a **Static Site**:
-
-| Setting | Value |
-|---|---|
-| **Root Directory** | `artifacts/3d-game` |
-| **Build Command** | `npm install -g pnpm && pnpm install && pnpm run build` |
-| **Publish Directory** | `dist/public` |
-| **Node Version** | 20 or 22 |
-
-> Or use the monorepo root with:
-> - **Build Command**: `npm install -g pnpm && pnpm install && pnpm --filter @workspace/3d-game run build`
-> - **Publish Directory**: `artifacts/3d-game/dist/public`
-
-No environment variables required for the frontend game.
+- `lib/api-spec/openapi.yaml` — source-of-truth OpenAPI spec
+- `lib/db/src/schema/projects.ts` — all DB table definitions
+- `artifacts/api-server/src/lib/ue5generator.ts` — UE5 project generation logic
+- `artifacts/api-server/src/routes/projects.ts` — project CRUD + AI generation pipeline
+- `artifacts/api-server/src/routes/files.ts` — file upload + AI analysis
+- `artifacts/api-server/src/routes/agents.ts` — agent roster
+- `artifacts/ai-game-creator/src/` — React frontend (pages: home, dashboard, /new, /studio/:id)
 
 ## Architecture decisions
 
-- Pure frontend game — no backend required, all state is client-side Zustand
-- Storm uses phase-based shrink like Fortnite (7 phases with wait intervals)
-- Weapon rarity weighted random table (common→legendary)
-- Bots use a 3-state machine: wandering → chasing → shooting
-- Buildings snap to a 2-unit grid, costs materials (wood/stone/metal)
-- Terrain height uses bilinear interpolation from a 48×48 noise grid
+- Generation pipeline runs async (fire-and-forget after POST /generate) so the HTTP response returns immediately; frontend polls for progress
+- OpenAI client lives at `artifacts/api-server/src/lib/openai.ts` (NOT the workspace integration — user provided own key)
+- Generated file content is stored in PostgreSQL (text column) and packaged into zip on download
+- 10 specialized agents are defined in code with distinct colors and roles; logs are tagged per-agent for colored real-time display
+- File uploads stored on disk at `<cwd>/uploads/`, metadata in DB
 
 ## Product
 
-30-player browser battle royale with:
-- 8 unique characters (Soldier, Ninja, Cyber, Warrior, Ghost, Hero, Assassin, Thief)
-- 10 weapon variants across 5 types (AR, Shotgun, Sniper, SMG, Pistol, RPG)
-- 5 rarity tiers: Common → Uncommon → Rare → Epic → Legendary
-- Building system: Wall, Floor, Ramp, Roof, Stair (costs wood/stone/metal)
-- Named POIs: Tilted Towers, Loot Lake, Retail Row, Pleasant Park, Dusty Depot, Fatal Fields, Salty Springs, Snobby Shores
-- Supply chests that drop epic/legendary loot
-- Fortnite-style HUD: Minimap, Compass, Weapon bar, Materials counter, Kill feed, Damage numbers
-- Storm with 7 shrink phases
-- Kill feed, XP/Level system, Victory Royale screen
+- **Home page**: hero with prompt input, genre presets, stats, agent showcase
+- **New Project**: full form with game options, platform selector, file upload
+- **Dashboard**: project grid with status badges, progress bars, genre tags
+- **Studio**: live agent log feed, progress ring, file tree, upload panel, AI analysis, download ZIP
 
 ## User preferences
 
-- Game should look and feel like Fortnite — detailed POIs, rarity colors, minimap, weapon bar
-- Push updates to GitHub: https://github.com/daviddan-241/Apex-fort
+- Uses own `OPENAI_API_KEY` (not Replit AI integration — phone verification was required)
 
 ## Gotchas
 
-- Do NOT use `Math.clamp` — it doesn't exist in TypeScript/browser JS, use `Math.min(Math.max(...), ...)`
-- Three.js `ellipseGeometry` doesn't exist in R3F — use `circleGeometry` with `scale` instead
-- Building `newPiece` ref needs `material: MaterialType` field now (not just position/type)
-- `JSX.Element` namespace needs `React.ReactElement` for standalone function return types
-- `require()` is not available in ESM — dynamic imports needed for chest loot (or restructure imports)
-- Always run `pnpm run typecheck` before pushing
+- Always run `pnpm --filter @workspace/db run push` after schema changes
+- After codegen, run `pnpm run typecheck:libs` to rebuild composite lib declarations before typechecking leaf packages
+- The `adm-zip` dynamic import in `files.ts` is intentional — needed for zip reading during file analysis
+- Download endpoint streams raw zip bytes — frontend uses `window.open('/api/projects/:id/download')` rather than the generated hook
 
 ## Pointers
 
