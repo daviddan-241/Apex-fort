@@ -1,16 +1,16 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
-import projectsRouter from "./projects";
-import filesRouter from "./files";
-import agentsRouter from "./agents";
-import mediaRouter from "./media";
+import sessionsRouter from "./sessions";
+import configRouter from "./config";
+import chatRouter from "./chat";
+import leaderboardRouter from "./leaderboard";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(projectsRouter);
-router.use(filesRouter);
-router.use(agentsRouter);
-router.use(mediaRouter);
+router.use(sessionsRouter);
+router.use(configRouter);
+router.use(chatRouter);
+router.use(leaderboardRouter);
 
 export default router;

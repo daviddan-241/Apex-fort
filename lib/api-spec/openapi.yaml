@@ -1,20 +1,24 @@
 openapi: 3.1.0
 info:
+  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: AI Game Creator API
+  description: 3D Game Engine API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
-  - name: projects
-    description: Game project operations
-  - name: agents
-    description: AI agent operations
-  - name: files
-    description: File upload operations
+  - name: sessions
+    description: Game session management
+  - name: config
+    description: Game engine configuration
+  - name: chat
+    description: AI upgrade chat
+  - name: leaderboard
+    description: Player scores
+
 paths:
   /healthz:
     get:
@@ -29,43 +33,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
-  /projects:
+  /sessions:
     get:
-      operationId: listProjects
-      tags: [projects]
-      summary: List all game projects
+      operationId: listSessions
+      tags: [sessions]
+      summary: List active game sessions
       responses:
         "200":
-          description: List of projects
+          description: Active sessions
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Project"
+                  $ref: "#/components/schemas/GameSession"
     post:
-      operationId: createProject
-      tags: [projects]
-      summary: Create a new game project from prompt
+      operationId: createSession
+      tags: [sessions]
+      summary: Create a new game session
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ProjectInput"
+              $ref: "#/components/schemas/SessionInput"
       responses:
         "201":
-          description: Created project
+          description: Created session
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
+                $ref: "#/components/schemas/GameSession"
 
-  /projects/{id}:
+  /sessions/{id}:
     get:
-      operationId: getProject
-      tags: [projects]
-      summary: Get project with full details
+      operationId: getSession
+      tags: [sessions]
+      summary: Get session by ID
       parameters:
         - name: id
           in: path
@@ -74,173 +78,120 @@ paths:
             type: string
       responses:
         "200":
-          description: Project details
+          description: Session details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProjectDetail"
+                $ref: "#/components/schemas/GameSession"
         "404":
           description: Not found
-    delete:
-      operationId: deleteProject
-      tags: [projects]
-      summary: Delete a project
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Deleted
 
-  /projects/{id}/generate:
-    post:
-      operationId: generateProject
-      tags: [projects]
-      summary: Start AI generation pipeline for a project
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+  /config:
+    get:
+      operationId: getConfig
+      tags: [config]
+      summary: Get current engine config
       responses:
         "200":
-          description: Generation started
+          description: Engine configuration
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
-
-  /projects/{id}/download:
-    get:
-      operationId: downloadProject
-      tags: [projects]
-      summary: Download project as a zip file
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Zip file download
-          content:
-            application/zip:
-              schema:
-                type: string
-                format: binary
-
-  /projects/{id}/logs:
-    get:
-      operationId: getProjectLogs
-      tags: [projects]
-      summary: Get agent build logs for a project
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Agent logs
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AgentLog"
-
-  /projects/{id}/files:
-    get:
-      operationId: getProjectFiles
-      tags: [projects]
-      summary: Get generated file tree for a project
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: File tree
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/GeneratedFile"
-
-  /projects/stats:
-    get:
-      operationId: getProjectStats
-      tags: [projects]
-      summary: Get dashboard stats across all projects
-      responses:
-        "200":
-          description: Stats summary
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectStats"
-
-  /agents:
-    get:
-      operationId: listAgents
-      tags: [agents]
-      summary: List all available AI agents and their status
-      responses:
-        "200":
-          description: Agent list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Agent"
-
-  /files/upload:
-    post:
-      operationId: uploadFile
-      tags: [files]
-      summary: Upload a file (image, video, zip, or other asset)
+                $ref: "#/components/schemas/EngineConfig"
+    patch:
+      operationId: updateConfig
+      tags: [config]
+      summary: Update engine configuration
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: "#/components/schemas/FileUploadData"
+              $ref: "#/components/schemas/ConfigUpdate"
       responses:
         "200":
-          description: Uploaded file info
+          description: Updated config
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UploadedFile"
+                $ref: "#/components/schemas/EngineConfig"
 
-  /files/{id}/analyze:
-    post:
-      operationId: analyzeFile
-      tags: [files]
-      summary: AI analyze an uploaded file (image/video/zip)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+  /chat:
+    get:
+      operationId: listChatMessages
+      tags: [chat]
+      summary: Get AI chat history
       responses:
         "200":
-          description: Analysis result
+          description: Chat messages
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileAnalysis"
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+    post:
+      operationId: sendChatMessage
+      tags: [chat]
+      summary: Send AI upgrade command
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "200":
+          description: AI response with applied changes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get top player scores
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+    post:
+      operationId: submitScore
+      tags: [leaderboard]
+      summary: Submit player score
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScoreInput"
+      responses:
+        "201":
+          description: Score recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardEntry"
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [leaderboard]
+      summary: Get global game statistics
+      responses:
+        "200":
+          description: Global stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameStats"
 
 components:
   schemas:
@@ -249,148 +200,198 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
-    Project:
+    GameSession:
       type: object
-      required: [id, name, prompt, status, progress, createdAt]
+      required: [id, name, playerCount, maxPlayers, gameMode, createdAt, sessionCode]
       properties:
-        id:          { type: string }
-        name:        { type: string }
-        prompt:      { type: string }
-        genre:       { type: ["string", "null"] }
-        status:      { type: string, enum: [pending, planning, generating, building, testing, packaging, completed, failed] }
-        progress:    { type: integer }
-        engine:      { type: string }
-        platform:    { type: ["string", "null"] }
-        createdAt:   { type: string }
-        updatedAt:   { type: ["string", "null"] }
-        fileCount:   { type: ["integer", "null"] }
-        downloadUrl: { type: ["string", "null"] }
-
-    ProjectDetail:
-      type: object
-      required: [id, name, prompt, status, progress, createdAt, logs, files]
-      properties:
-        id:        { type: string }
-        name:      { type: string }
-        prompt:    { type: string }
-        genre:     { type: ["string", "null"] }
-        status:    { type: string }
-        progress:  { type: integer }
-        engine:    { type: string }
-        platform:  { type: ["string", "null"] }
-        createdAt: { type: string }
-        updatedAt: { type: ["string", "null"] }
-        logs:
-          type: array
-          items:
-            $ref: "#/components/schemas/AgentLog"
-        files:
-          type: array
-          items:
-            $ref: "#/components/schemas/GeneratedFile"
-        gameDesign: { type: ["string", "null"] }
-        features:
-          type: array
-          items: { type: string }
-
-    ProjectInput:
-      type: object
-      required: [prompt]
-      properties:
-        prompt:   { type: string, minLength: 1 }
-        platform: { type: string }
-        features:
-          type: array
-          items: { type: string }
-        uploadedFileIds:
-          type: array
-          items: { type: string }
-
-    ProjectStats:
-      type: object
-      required: [total, completed, inProgress, failed, totalFiles]
-      properties:
-        total:      { type: integer }
-        completed:  { type: integer }
-        inProgress: { type: integer }
-        failed:     { type: integer }
-        totalFiles: { type: integer }
-        byGenre:
-          type: array
-          items:
-            type: object
-            required: [genre, count]
-            properties:
-              genre: { type: string }
-              count: { type: integer }
-
-    AgentLog:
-      type: object
-      required: [id, agentId, agentName, level, message, timestamp]
-      properties:
-        id:        { type: string }
-        agentId:   { type: string }
-        agentName: { type: string }
-        level:     { type: string, enum: [info, success, warning, error] }
-        message:   { type: string }
-        timestamp: { type: string }
-        phase:     { type: ["string", "null"] }
-
-    GeneratedFile:
-      type: object
-      required: [path, type, size]
-      properties:
-        path:    { type: string }
-        type:    { type: string }
-        size:    { type: integer }
-        content: { type: ["string", "null"] }
-
-    Agent:
-      type: object
-      required: [id, name, role, status, color]
-      properties:
-        id:     { type: string }
-        name:   { type: string }
-        role:   { type: string }
-        status: { type: string, enum: [idle, working, complete, error] }
-        color:  { type: string }
-        currentTask: { type: ["string", "null"] }
-
-    FileUploadData:
-      type: object
-      properties:
-        file:
+        id:
           type: string
-          format: binary
-        projectId:
+        name:
+          type: string
+        playerCount:
+          type: integer
+        maxPlayers:
+          type: integer
+        gameMode:
+          type: string
+          enum: [battle_royale, deathmatch, sandbox]
+        createdAt:
+          type: string
+        sessionCode:
+          type: string
+        isPublic:
+          type: boolean
+        hostName:
           type: string
 
-    UploadedFile:
+    SessionInput:
       type: object
-      required: [id, originalName, mimeType, size, path]
+      required: [name, gameMode]
       properties:
-        id:           { type: string }
-        originalName: { type: string }
-        mimeType:     { type: string }
-        size:         { type: integer }
-        path:         { type: string }
-        url:          { type: string }
+        name:
+          type: string
+          minLength: 1
+        gameMode:
+          type: string
+          enum: [battle_royale, deathmatch, sandbox]
+        maxPlayers:
+          type: integer
+          minimum: 2
+          maximum: 100
+        isPublic:
+          type: boolean
+        hostName:
+          type: string
 
-    FileAnalysis:
+    EngineConfig:
       type: object
-      required: [fileId, summary]
+      required: [id, movementSpeed, jumpHeight, gravity, fogEnabled, fogDensity, bloomEnabled, cameraMode, fov, bulletDamage, reloadTime, createdAt, updatedAt]
       properties:
-        fileId:      { type: string }
-        summary:     { type: string }
-        suggestions:
-          type: array
-          items: { type: string }
-        detectedObjects:
-          type: array
-          items: { type: string }
-        gameElements:
-          type: array
-          items: { type: string }
+        id:
+          type: integer
+        movementSpeed:
+          type: number
+        sprintMultiplier:
+          type: number
+        jumpHeight:
+          type: number
+        gravity:
+          type: number
+        fogEnabled:
+          type: boolean
+        fogDensity:
+          type: number
+        bloomEnabled:
+          type: boolean
+        bloomIntensity:
+          type: number
+        cameraMode:
+          type: string
+          enum: [third_person, first_person, shoulder]
+        fov:
+          type: number
+        bulletDamage:
+          type: number
+        reloadTime:
+          type: number
+        ambientLight:
+          type: number
+        shadowsEnabled:
+          type: boolean
+        particlesEnabled:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ConfigUpdate:
+      type: object
+      properties:
+        movementSpeed:
+          type: number
+        sprintMultiplier:
+          type: number
+        jumpHeight:
+          type: number
+        gravity:
+          type: number
+        fogEnabled:
+          type: boolean
+        fogDensity:
+          type: number
+        bloomEnabled:
+          type: boolean
+        bloomIntensity:
+          type: number
+        cameraMode:
+          type: string
+          enum: [third_person, first_person, shoulder]
+        fov:
+          type: number
+        bulletDamage:
+          type: number
+        reloadTime:
+          type: number
+        ambientLight:
+          type: number
+        shadowsEnabled:
+          type: boolean
+        particlesEnabled:
+          type: boolean
+
+    ChatMessage:
+      type: object
+      required: [id, role, content, createdAt]
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        configChanges:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ChatInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+
+    LeaderboardEntry:
+      type: object
+      required: [id, playerName, score, kills, deaths, gameMode, createdAt]
+      properties:
+        id:
+          type: integer
+        playerName:
+          type: string
+        score:
+          type: integer
+        kills:
+          type: integer
+        deaths:
+          type: integer
+        gameMode:
+          type: string
+        createdAt:
+          type: string
+
+    ScoreInput:
+      type: object
+      required: [playerName, score, kills, deaths, gameMode]
+      properties:
+        playerName:
+          type: string
+          minLength: 1
+        score:
+          type: integer
+        kills:
+          type: integer
+        deaths:
+          type: integer
+        gameMode:
+          type: string
+
+    GameStats:
+      type: object
+      required: [totalSessions, activePlayers, totalKills, topScore]
+      properties:
+        totalSessions:
+          type: integer
+        activePlayers:
+          type: integer
+        totalKills:
+          type: integer
+        topScore:
+          type: integer
+        avgSessionDuration:
+          type: number
