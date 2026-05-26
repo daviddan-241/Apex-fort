@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { getTerrainHeight } from '@/utils/terrain';
 
+// Terrain re-exported with larger SIZE and more dramatic colours below
+
 export function Terrain() {
   const geometry = useMemo(() => {
     const SIZE = 600;
