@@ -1,161 +1,149 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import { getTerrainHeight } from '@/utils/terrain';
 import { useGameStore } from '@/store/gameStore';
+import { ProceduralSoldier } from './ProceduralSoldier';
 
-const MODEL_URL = '/models/Soldier.glb';
 const CAMERA_DISTANCE = 5.5;
-const CAMERA_HEIGHT = 1.8;
-
-type AnimName = 'Idle' | 'Walk' | 'Run';
+const CAMERA_HEIGHT   = 1.8;
 
 export function SoldierCharacter() {
-  const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const setAmmo = useGameStore((s) => s.setAmmo);
-  const setHealth = useGameStore((s) => s.setHealth);
-  const addKillFeedEntry = useGameStore((s) => s.addKillFeedEntry);
+  const setAmmo            = useGameStore((s) => s.setAmmo);
+  const addKillFeedEntry   = useGameStore((s) => s.addKillFeedEntry);
+  const touchInput         = useGameStore((s) => s.touchInput);
 
-  const keys = useRef({ w: false, a: false, s: false, d: false, space: false, shift: false });
-  const yaw = useRef(0);
-  const pitch = useRef(0.15);
-  const position = useRef(new THREE.Vector3(0, 10, 0));
-  const velocity = useRef(new THREE.Vector3());
-  const isGrounded = useRef(false);
-  const isShooting = useRef(false);
-  const lastShot = useRef(0);
-  const currentAnim = useRef<AnimName>('Idle');
+  const keys        = useRef({ w: false, a: false, s: false, d: false, shift: false });
+  const yaw         = useRef(0);
+  const pitch       = useRef(0.15);
+  const position    = useRef(new THREE.Vector3(0, 10, 0));
+  const velocityY   = useRef(0);
+  const isGrounded  = useRef(false);
+  const lastShot    = useRef(0);
+  const spacePressed = useRef(false);
 
-  const { scene, animations } = useGLTF(MODEL_URL);
-  const clonedScene = useMemo(() => {
-    const c = scene.clone(true);
-    c.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-      }
-    });
-    return c;
-  }, [scene]);
+  // Soldier visual state
+  const [playerPos] = useState(() => new THREE.Vector3(0, 10, 0));
+  const [rotY, setRotY] = useState(0);
+  const [moving, setMoving]   = useState(false);
+  const [running, setRunning] = useState(false);
 
-  const { actions } = useAnimations(animations, groupRef);
-
-  useEffect(() => {
-    const a = actions as Record<string, THREE.AnimationAction | null>;
-    a['Idle']?.play();
-  }, [actions]);
-
+  // ── Keyboard (desktop) ───────────────────────────────────────────
   useEffect(() => {
     const k = keys.current;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') k.w = true;
-      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') k.s = true;
-      if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') k.a = true;
+    const onDown = (e: KeyboardEvent) => {
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    k.w = true;
+      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  k.s = true;
+      if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  k.a = true;
       if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') k.d = true;
-      if (e.key === ' ') { k.space = true; e.preventDefault(); }
       if (e.key === 'Shift') k.shift = true;
+      if (e.key === ' ') { spacePressed.current = true; e.preventDefault(); }
     };
-    const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') k.w = false;
-      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') k.s = false;
-      if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') k.a = false;
+    const onUp = (e: KeyboardEvent) => {
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp')    k.w = false;
+      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown')  k.s = false;
+      if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft')  k.a = false;
       if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') k.d = false;
-      if (e.key === ' ') k.space = false;
       if (e.key === 'Shift') k.shift = false;
+      if (e.key === ' ') spacePressed.current = false;
     };
-    const onMouseMove = (e: MouseEvent) => {
-      if (document.pointerLockElement) {
-        yaw.current -= e.movementX * 0.0022;
-        pitch.current -= e.movementY * 0.0022;
-        pitch.current = Math.max(-0.45, Math.min(0.65, pitch.current));
-      }
-    };
-    const onMouseDown = (e: MouseEvent) => {
-      if (e.button !== 0) return;
-      if (!document.pointerLockElement) {
-        document.body.requestPointerLock();
-      } else {
-        isShooting.current = true;
-      }
-    };
-    const onMouseUp = () => { isShooting.current = false; };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('mousemove', onMouseMove);
+    // Desktop mouse look — NO pointer lock (works on all platforms)
+    let mouseDown = false;
+    let lastMX = 0, lastMY = 0;
+    const onMouseDown = (e: MouseEvent) => { if (e.button === 0) { mouseDown = true; lastMX = e.clientX; lastMY = e.clientY; } };
+    const onMouseUp   = () => { mouseDown = false; };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!mouseDown) return;
+      const dx = e.clientX - lastMX;
+      const dy = e.clientY - lastMY;
+      lastMX = e.clientX; lastMY = e.clientY;
+      yaw.current   -= dx * 0.003;
+      pitch.current -= dy * 0.003;
+      pitch.current  = Math.max(-0.45, Math.min(0.65, pitch.current));
+    };
+
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
     };
   }, []);
 
-  const playAnim = (name: AnimName) => {
-    if (currentAnim.current === name) return;
-    const a = actions as Record<string, THREE.AnimationAction | null>;
-    a[currentAnim.current]?.fadeOut(0.18);
-    a[name]?.reset().fadeIn(0.18).play();
-    currentAnim.current = name;
-  };
-
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
-    const k = keys.current;
-    const isMoving = k.w || k.s || k.a || k.d;
-    const speed = k.shift ? 11 : 5.5;
+    const dt = Math.min(delta, 0.05);
+    const k  = keys.current;
+    const ti = touchInput;
 
-    // Movement
-    if (isMoving) {
-      const dir = new THREE.Vector3();
-      if (k.w) dir.z -= 1;
-      if (k.s) dir.z += 1;
-      if (k.a) dir.x -= 1;
-      if (k.d) dir.x += 1;
-      dir.normalize().multiplyScalar(speed * Math.min(delta, 0.05));
+    // ── Touch look ─────────────────────────────────────────────────
+    if (ti.lookDx !== 0 || ti.lookDy !== 0) {
+      yaw.current   -= ti.lookDx * 0.004;
+      pitch.current -= ti.lookDy * 0.004;
+      pitch.current  = Math.max(-0.45, Math.min(0.65, pitch.current));
+    }
+
+    // ── Movement ───────────────────────────────────────────────────
+    const isShifting   = k.shift || running;
+    const speed        = isShifting ? 11 : 5.5;
+    const kbMoving     = k.w || k.s || k.a || k.d;
+    const touchMoving  = Math.abs(ti.moveX) > 0.1 || Math.abs(ti.moveY) > 0.1;
+    const isMoving     = kbMoving || touchMoving;
+
+    const dir = new THREE.Vector3();
+
+    if (kbMoving) {
+      if (k.w) dir.z -= 1; if (k.s) dir.z += 1;
+      if (k.a) dir.x -= 1; if (k.d) dir.x += 1;
+    } else if (touchMoving) {
+      dir.x = ti.moveX; dir.z = ti.moveY;
+    }
+
+    if (dir.lengthSq() > 0) {
+      dir.normalize().multiplyScalar(speed * dt);
       dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
       position.current.add(dir);
     }
 
-    // Gravity
-    velocity.current.y -= 22 * Math.min(delta, 0.05);
-    position.current.y += velocity.current.y * Math.min(delta, 0.05);
+    // ── Gravity ────────────────────────────────────────────────────
+    velocityY.current -= 22 * dt;
+    position.current.y += velocityY.current * dt;
 
-    // Terrain collision
+    // ── Terrain collision ──────────────────────────────────────────
     const groundY = getTerrainHeight(position.current.x, position.current.z);
     if (position.current.y <= groundY + 1.05) {
       position.current.y = groundY + 1.05;
-      velocity.current.y = 0;
+      velocityY.current  = 0;
       isGrounded.current = true;
     } else {
       isGrounded.current = false;
     }
 
-    // Jump
-    if (k.space && isGrounded.current) {
-      velocity.current.y = 9;
+    // ── Jump ───────────────────────────────────────────────────────
+    const doJump = spacePressed.current || ti.jumping;
+    if (doJump && isGrounded.current) {
+      velocityY.current  = 9;
       isGrounded.current = false;
     }
 
-    // Shoot
-    if (isShooting.current) {
+    // ── Shoot ──────────────────────────────────────────────────────
+    if (ti.shooting) {
       const now = state.clock.elapsedTime;
       if (now - lastShot.current > 0.09) {
         lastShot.current = now;
         const cur = useGameStore.getState().ammo;
         if (cur > 0) {
           setAmmo(cur - 1);
-          // Occasionally trigger a kill feed entry as demo
-          if (Math.random() < 0.05) {
-            const victims = ['Ghost', 'Shadow', 'Apex_01', 'Player_7', 'Wraith'];
-            const weapons = ['AR', 'SMG', 'Sniper', 'Shotgun'];
+          if (Math.random() < 0.06) {
+            const victims  = ['Ghost', 'Shadow', 'Apex_01', 'Player_7', 'Wraith', 'Striker'];
+            const weapons  = ['AR-15', 'SMG', 'Sniper', 'Shotgun'];
             addKillFeedEntry({
               killer: 'YOU',
               victim: victims[Math.floor(Math.random() * victims.length)],
@@ -166,32 +154,28 @@ export function SoldierCharacter() {
       }
     }
 
-    // Update mesh
-    groupRef.current.position.copy(position.current);
-    groupRef.current.rotation.y = yaw.current + Math.PI;
-
-    // Third-person camera
+    // ── Camera (third-person) ──────────────────────────────────────
     const cosPitch = Math.cos(pitch.current);
     const sinPitch = Math.sin(pitch.current);
     const cx = position.current.x + Math.sin(yaw.current) * CAMERA_DISTANCE * cosPitch;
     const cy = position.current.y + CAMERA_HEIGHT + sinPitch * CAMERA_DISTANCE;
     const cz = position.current.z + Math.cos(yaw.current) * CAMERA_DISTANCE * cosPitch;
-    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.12);
+    camera.position.lerp(new THREE.Vector3(cx, cy, cz), 0.14);
     camera.lookAt(position.current.x, position.current.y + 1.4, position.current.z);
 
-    // Animations
-    if (isMoving) {
-      playAnim(k.shift ? 'Run' : 'Walk');
-    } else {
-      playAnim('Idle');
-    }
+    // ── Update visual state ────────────────────────────────────────
+    playerPos.copy(position.current);
+    setRotY(yaw.current + Math.PI);
+    setMoving(isMoving);
+    setRunning(isShifting && isMoving);
   });
 
   return (
-    <group ref={groupRef}>
-      <primitive object={clonedScene} scale={1} />
-    </group>
+    <ProceduralSoldier
+      position={playerPos}
+      rotationY={rotY}
+      moving={moving}
+      running={running}
+    />
   );
 }
-
-useGLTF.preload(MODEL_URL);

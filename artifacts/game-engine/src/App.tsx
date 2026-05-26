@@ -9,6 +9,7 @@ import GamePage from "@/pages/game";
 import LobbyPage from "@/pages/lobby";
 import LeaderboardPage from "@/pages/leaderboard";
 import SettingsPage from "@/pages/settings";
+import CreatorPage from "@/pages/creator";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/lobby" component={LobbyPage} />
       <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/settings" component={SettingsPage} />
+      <Route path="/creator" component={CreatorPage} />
       <Route component={NotFound} />
     </Switch>
   );

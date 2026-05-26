@@ -27,6 +27,15 @@ export interface KillFeedEntry {
   timestamp: number;
 }
 
+interface TouchInput {
+  moveX: number;
+  moveY: number;
+  lookDx: number;
+  lookDy: number;
+  shooting: boolean;
+  jumping: boolean;
+}
+
 interface GameState {
   health: number;
   shield: number;
@@ -42,6 +51,7 @@ interface GameState {
   uploadedModels: string[];
   killFeed: KillFeedEntry[];
   isUploaderOpen: boolean;
+  touchInput: TouchInput;
 
   setHealth: (health: number) => void;
   setShield: (shield: number) => void;
@@ -55,9 +65,10 @@ interface GameState {
   addUploadedModel: (url: string) => void;
   removeUploadedModel: (url: string) => void;
   addKillFeedEntry: (entry: Omit<KillFeedEntry, 'id' | 'timestamp'>) => void;
+  setTouchInput: (input: Partial<TouchInput>) => void;
 }
 
-export const useGameStore = create<GameState>((set, get) => ({
+export const useGameStore = create<GameState>((set) => ({
   health: 100,
   maxHealth: 100,
   shield: 50,
@@ -72,6 +83,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   gameModeIndex: 0,
   uploadedModels: [],
   killFeed: [],
+  touchInput: { moveX: 0, moveY: 0, lookDx: 0, lookDy: 0, shooting: false, jumping: false },
 
   setHealth: (health) => set({ health: Math.max(0, Math.min(100, health)) }),
   setShield: (shield) => set({ shield: Math.max(0, Math.min(100, shield)) }),
@@ -98,4 +110,6 @@ export const useGameStore = create<GameState>((set, get) => ({
       set((s) => ({ killFeed: s.killFeed.filter((e) => e.id !== newEntry.id) }));
     }, 5000);
   },
+  setTouchInput: (input) =>
+    set((s) => ({ touchInput: { ...s.touchInput, ...input } })),
 }));

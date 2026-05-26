@@ -4,9 +4,14 @@ import { HUD } from '@/components/game/HUD';
 import { AIUpgradePanel } from '@/components/game/AIUpgradePanel';
 import { AssetUploader } from '@/components/game/AssetUploader';
 import { GameModeManager } from '@/components/game/GameModeManager';
+import { TouchControls } from '@/components/game/TouchControls';
 import { Navbar } from '@/components/layout/Navbar';
 import { useGetConfig } from '@workspace/api-client-react';
 import { useGameStore } from '@/store/gameStore';
+
+const isMobile = () =>
+  /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+  navigator.maxTouchPoints > 1;
 
 export default function GamePage() {
   const { data: config } = useGetConfig();
@@ -17,7 +22,7 @@ export default function GamePage() {
   }, [config, setEngineConfig]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#060810] text-white">
+    <div className="relative w-full h-screen overflow-hidden bg-[#060810] text-white" style={{ touchAction: 'none' }}>
 
       {/* 3D canvas — fills entire screen */}
       <div className="absolute inset-0 z-0">
@@ -35,9 +40,16 @@ export default function GamePage() {
       </div>
 
       {/* Game mode announcements */}
-      <div className="absolute inset-0 z-25 pointer-events-none pt-14">
+      <div className="absolute inset-0 z-[25] pointer-events-none pt-14">
         <GameModeManager />
       </div>
+
+      {/* Touch controls — mobile only */}
+      {isMobile() && (
+        <div className="absolute inset-0 z-[28] pt-14">
+          <TouchControls />
+        </div>
+      )}
 
       {/* AI Chat panel */}
       <div className="absolute inset-0 z-30 pointer-events-none">
