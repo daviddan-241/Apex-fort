@@ -5,22 +5,24 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 
-import GamePage from "@/pages/game";
+import HomePage from "@/pages/home";
+import StudioPage from "@/pages/studio";
+import PlayPage from "@/pages/game";
 import LobbyPage from "@/pages/lobby";
 import LeaderboardPage from "@/pages/leaderboard";
 import SettingsPage from "@/pages/settings";
-import CreatorPage from "@/pages/creator";
 
 const queryClient = new QueryClient();
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={GamePage} />
+      <Route path="/" component={HomePage} />
+      <Route path="/studio" component={StudioPage} />
+      <Route path="/play" component={PlayPage} />
       <Route path="/lobby" component={LobbyPage} />
       <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/settings" component={SettingsPage} />
-      <Route path="/creator" component={CreatorPage} />
       <Route component={NotFound} />
     </Switch>
   );
